@@ -148,3 +148,54 @@ function downloadSVG() {
   a.download = 'typing.svg';
   a.click();
 }
+
+async function generateAPNG() {
+  const object = document.querySelector('#preview object');
+  if (!object) {
+    alert('まずSVGを生成してください。');
+    return;
+  }
+
+  const svgDoc = object.contentDocument;
+  const svgEl = svgDoc.querySelector('svg');
+  const width = svgEl.viewBox.baseVal.width || svgEl.width.baseVal.value;
+  const height = svgEl.viewBox.baseVal.height || svgEl.height.baseVal.value;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+
+  const frames = [];
+  const frameDelay = 100; // msごとのキャプチャ間隔（速さに応じて調整可能）
+  const totalDuration = 5000; // 全体を5秒間キャプチャ（必要なら調整）
+  const totalFrames = Math.floor(totalDuration / frameDelay);
+
+  // 一時的に静止画を描画するImageオブジェクト
+  const img = new Image();
+  const svgBlob = new Blob([document.getElementById('svgCode').value], { type: 'image/svg+xml' });
+  const svgURL = URL.createObjectURL(svgBlob);
+  img.src = svgURL;
+
+  await new Promise(res => { img.onload = res; });
+
+  for (let i = 0; i < totalFrames; i++) {
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    const arrayBuffer = await blob.arrayBuffer();
+    frames.push(new Uint8Array(arrayBuffer));
+    await new Promise(r => setTimeout(r, frameDelay));
+  }
+
+  const delays = new Array(frames.length).fill(frameDelay);
+  const apng = UPNG.encode(frames, width, height, 0, delays);
+  const apngBlob = new Blob([apng], { type: "image/png" });
+  const url = URL.createObjectURL(apngBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "typing.apng";
+  a.click();
+
+  URL.revokeObjectURL(svgURL);
+}
