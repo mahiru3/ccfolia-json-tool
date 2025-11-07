@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=720" />
+  <title>Typing SVG Generator</title>
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      margin: 1em;
+      background: #f9f9f9;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 1em;
+      font-weight: bold;
+    }
+    textarea, input[type="number"], input[type="color"], input[type="range"] {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 0.3em;
+    }
+    button {
+      margin: 1em 0.5em 1em 0;
+      padding: 0.5em 1em;
+      font-size: 1em;
+    }
+    #preview {
+      width: 672px;
+      height: 288px;
+      border: 1px solid #ccc;
+      margin-top: 1em;
+      background: #fff;
+    }
+    #svgCode {
+      width: 100%;
+      height: 200px;
+      margin-top: 1em;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+</head>
+<body>
+  <h1>Typing SVG Generator</h1>
+
+  <label for="before">変化前（かな）</label>
+  <textarea id="before" rows="2" placeholder="れいとなる,ぶんしょう" aria-label="変化前（かな）"></textarea>
+
+  <label for="after">変化後（漢字）</label>
+  <textarea id="after" rows="2" placeholder="例となる,文章" aria-label="変化後（漢字）"></textarea>
+
+  <label for="fontSize">文字サイズ（px）</label>
+  <input type="number" id="fontSize" value="32" min="8" max="100" aria-label="文字サイズ">
+
+  <label for="fontColor">文字色</label>
+  <input type="color" id="fontColor" value="#000000" aria-label="文字色">
+
+  <label for="bgColor">背景色</label>
+  <input type="color" id="bgColor" value="#ffffff" aria-label="背景色">
+
+  <label for="speed">タイピング速度（ms/文字）</label>
+  <input type="range" id="speed" min="20" max="500" value="120" step="10" aria-label="タイピング速度">
+
+  <div>
+    <button onclick="generateSVG()" aria-label="SVGを生成">SVGを生成</button>
+    <button onclick="copyCode()" aria-label="コードをコピー">コードをコピー</button>
+    <button onclick="downloadSVG()" aria-label="SVGを保存">SVGを保存</button>
+  </div>
+
+  <div id="preview"></div>
+  <textarea id="svgCode" readonly></textarea>
+
+  <script>
+    function generateSVG() {
+      const before = document.getElementById('before').value.trim();
+      if (!before) return alert('変化前を入力してください');
+      const after = document.getElementById('after').value.trim();
+      const fontSize = parseInt(document.getElementById('fontSize').value, 10);
+      const fontColor = document.getElementById('fontColor').value;
+      const bgColor = document.getElementById('bgColor').value;
+      const speed = parseInt(document.getElementById('speed').value, 10);
+
+      const beforeArr = before.split(',').map(s => s.trim());
+      let afterArr = after ? after.split(',').map(s => s.trim()) : [];
+      while (afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
+
+      const lineHeight = fontSize * 1.4;
+      const offsetY = (288 - lineHeight * beforeArr.length) / 2 + fontSize;
+
+      const lines = [];
+      const styles = `
+        .dash { stroke-dasharray: 4 2; stroke: ${fontColor}; stroke-width: 1; }
+        .undashed { stroke: ${fontColor}; stroke-width: 1; }
+        .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
+      `;
+
+      beforeArr.forEach((kana, i) => {
+        const y = offsetY + i * lineHeight;
+        lines.push(`
+          <g id="line${i}" transform="translate(336, ${y})">
+            <text id="text${i}"></text>
+            <line id="underline${i}" y1="0" y2="0" x1="-100" x2="100" class="dash"/>
+          </g>`);
+      });
+
+      const svgScript = `
+        const before = ${JSON.stringify(beforeArr)};
+        const after = ${JSON.stringify(afterArr)};
+        const speed = ${speed};
+        const cursor = document.getElementById('cursor');
+
+        async function typeLine(i) {
+          const textEl = document.getElementById('text'+i);
+          const underline = document.getElementById('underline'+i);
+          const kana = before[i];
+          const kanji = after[i];
+          let str = '';
+          for (let j = 0; j < kana.length; j++) {
+            str += kana[j];
+            textEl.textContent = str;
+            await new Promise(r => setTimeout(r, speed));
+            const len = textEl.getComputedTextLength();
+            textEl.setAttribute('x', 0);
+            cursor.setAttribute('x', 336 + len / 2);
+            cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - ${fontSize}/2);
+          }
+          await new Promise(r => setTimeout(r, 400));
+          textEl.textContent = kanji;
+          const len = textEl.getComputedTextLength();
+          textEl.setAttribute('x', 0);
+          underline.setAttribute('x1', -len/2);
+          underline.setAttribute('x2', len/2);
+          underline.setAttribute('class', 'undashed');
+        }
+
+        async function animate() {
+          for (let i = 0; i < before.length; i++) {
+            await typeLine(i);
+          }
+          cursor.remove();
+        }
+
+        animate();
+      `.replace(/<\/script>/gi, '<\\/script>');
+
+      const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288" viewBox="0 0 672 288">
+  <style>${styles}</style>
+  <rect width="100%" height="100%" fill="${bgColor}"/>
+  ${lines.join('\n')}
+  <rect id="cursor" width="2" height="${fontSize}" class="cursor" x="0" y="0"/>
+  <script><![CDATA[${svgScript}]]></script>
+</svg>`;
+
+      document.getElementById('preview').innerHTML = svg;
+      document.getElementById('svgCode').value = svg;
+    }
+
+    function copyCode() {
+      const code = document.getElementById('svgCode').value;
+      navigator.clipboard.writeText(code).then(() => alert('コピーしました'));
+    }
+
+    function downloadSVG() {
+      const code = document.getElementById('svgCode').value;
+      const blob = new Blob([code], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'typing.svg';
+      a.click();
+    }
+  </script>
+</body>
+</html>
