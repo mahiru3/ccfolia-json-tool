@@ -22,6 +22,29 @@
     font-size: 14px;
     border-radius: 4px;
   }
+  .color-row {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+  }
+  label {
+    font-weight: bold;
+    margin-top: 6px;
+  }
+  .buttons {
+    display: flex;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  button {
+    background: #0080ff;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
   .output {
     width: 672px;
     height: 288px;
@@ -38,35 +61,38 @@
     padding: 10px;
     width: 90%;
     overflow-x: auto;
-  }
-  button {
-    background: #0080ff;
-    color: #fff;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
+    font-size: 12px;
   }
 </style>
 </head>
 <body>
   <h2>Typing SVG Generator</h2>
-  <label>変化前の文章（かななど）</label>
-  <textarea id="textBefore" rows="3">れいとなる\nぶんしょう</textarea>
 
-  <label>変化後の文章（漢字など）</label>
-  <textarea id="textAfter" rows="3">例となる\n文章</textarea>
+  <label>変化前の文章（かななど） <small>例：れいとなる,ぶんしょう</small></label>
+  <textarea id="textBefore" rows="2">れいとなる,ぶんしょう</textarea>
+
+  <label>変化後の文章（漢字など） <small>例：例となる,文章</small></label>
+  <textarea id="textAfter" rows="2">例となる,文章</textarea>
 
   <label>文字サイズ</label>
   <input type="number" id="fontSize" value="32">
 
-  <label>文字色</label>
-  <input type="color" id="fontColor" value="#000000">
+  <div class="color-row">
+    <div>
+      <label for="fontColor">文字色</label><br>
+      <input type="color" id="fontColor" value="#000000">
+    </div>
+    <div>
+      <label for="bgColor">背景色</label><br>
+      <input type="color" id="bgColor" value="#ffffff">
+    </div>
+  </div>
 
-  <label>背景色</label>
-  <input type="color" id="bgColor" value="#ffffff">
-
-  <button id="generate">SVGを生成</button>
+  <div class="buttons">
+    <button id="generate">SVGを生成</button>
+    <button id="copyCode">コードをコピー</button>
+    <button id="saveFile">保存</button>
+  </div>
 
   <div class="output" id="preview">SVGプレビュー</div>
 
@@ -75,8 +101,8 @@
 
 <script>
 document.getElementById("generate").onclick = function() {
-  const before = document.getElementById("textBefore").value.split("\n");
-  const after = document.getElementById("textAfter").value.split("\n");
+  const before = document.getElementById("textBefore").value.split(",");
+  const after = document.getElementById("textAfter").value.split(",");
   const fontSize = document.getElementById("fontSize").value;
   const fontColor = document.getElementById("fontColor").value;
   const bgColor = document.getElementById("bgColor").value;
@@ -151,6 +177,23 @@ document.getElementById("generate").onclick = function() {
 
   document.getElementById("preview").innerHTML = svg;
   document.getElementById("svgCode").textContent = svg;
+};
+
+// コードをコピー
+document.getElementById("copyCode").onclick = function() {
+  const code = document.getElementById("svgCode").textContent;
+  navigator.clipboard.writeText(code);
+  alert("SVGコードをコピーしました！");
+};
+
+// ファイル保存
+document.getElementById("saveFile").onclick = function() {
+  const code = document.getElementById("svgCode").textContent;
+  const blob = new Blob([code], { type: "image/svg+xml" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "typing.svg";
+  a.click();
 };
 </script>
 </body>
