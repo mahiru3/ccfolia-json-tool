@@ -149,13 +149,13 @@ function downloadSVG() {
 }
 
 async function generateAPNG() {
-  const svgText = document.getElementById('svgCode').value;
-  if (!svgText) {
-    alert('まずSVGを生成してください。');
+  const object = document.querySelector('#preview object');
+  if (!object) {
+    alert('まずSVG生成！');
     return;
   }
 
-  // 必要ライブラリを動的ロード
+  // UPNGライブラリを動的ロード
   if (!window.UPNG) {
     await new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -166,34 +166,48 @@ async function generateAPNG() {
     });
   }
 
-  // SVG → <img> に変換して描画可能にする
-  const img = new Image();
-  const blob = new Blob([svgText], { type: "image/svg+xml" });
-  const url = URL.createObjectURL(blob);
-  img.src = url;
-  await img.decode();
+  // SVGドキュメントを取得（object内の中身）
+  const svgDoc = object.contentDocument;
+  if (!svgDoc) {
+    alert("SVGが読み込まれていません。少し待ってから再試行してください。");
+    return;
+  }
 
-  // Canvas準備
+  const svgEl = svgDoc.querySelector("svg");
+  const width = svgEl.viewBox.baseVal.width || svgEl.width.baseVal.value || 800;
+  const height = svgEl.viewBox.baseVal.height || svgEl.height.baseVal.value || 400;
+
   const canvas = document.createElement("canvas");
-  canvas.width = img.width || 800;
-  canvas.height = img.height || 400;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
 
   const frames = [];
   const frameDelay = 100; // ms
-  const totalFrames = 50; // 例：5秒(=100ms×50)
+  const totalFrames = 60; // 6秒分
 
   for (let i = 0; i < totalFrames; i++) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // SVG内部をそのまま画像として描画
+    const svgData = new XMLSerializer().serializeToString(svgEl);
+    const img = new Image();
+    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    img.src = url;
+    await img.decode();
+
+    ctx.clearRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0);
-    const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
-    const arrayBuffer = await blob.arrayBuffer();
-    frames.push(new Uint8Array(arrayBuffer));
+
+    const pngBlob = await new Promise(r => canvas.toBlob(r, "image/png"));
+    const buffer = await pngBlob.arrayBuffer();
+    frames.push(new Uint8Array(buffer));
+
+    URL.revokeObjectURL(url);
     await new Promise(r => setTimeout(r, frameDelay));
   }
 
   const delays = new Array(frames.length).fill(frameDelay);
-  const apng = UPNG.encode(frames, canvas.width, canvas.height, 0, delays);
+  const apng = UPNG.encode(frames, width, height, 0, delays);
   const apngBlob = new Blob([apng], { type: "image/png" });
   const apngUrl = URL.createObjectURL(apngBlob);
 
