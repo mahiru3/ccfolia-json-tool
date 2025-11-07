@@ -3,177 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=672, height=288">
-<title>Typing SVG Generator</title>
+<title>SVG文章アニメツール</title>
 <style>
   body {
-    font-family: "Noto Sans JP", sans-serif;
-    background: #222;
+    background-color: #1e1e1e;
     color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
+    font-family: "Segoe UI", sans-serif;
+    text-align: center;
+    padding: 20px;
+  }
+  textarea, input, button {
+    margin: 8px;
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
   }
   textarea, input {
     width: 90%;
-    margin: 4px 0;
-    padding: 6px;
-    font-size: 14px;
-    border-radius: 4px;
+    max-width: 600px;
   }
   .color-row {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
   }
-  label {
-    font-weight: bold;
-    margin-top: 6px;
-  }
-  .buttons {
-    display: flex;
-    gap: 10px;
-    margin: 10px 0;
-  }
-  button {
-    background: #0080ff;
-    color: #fff;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  .output {
+  #preview {
     width: 672px;
     height: 288px;
-    border: 1px solid #555;
-    background: #fff;
+    background-color: white;
+    margin: 20px auto;
     display: flex;
-    align-items: center;
     justify-content: center;
-    overflow: hidden;
+    align-items: center;
+  }
+  .button-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
   }
   pre {
     background: #111;
     color: #0f0;
     padding: 10px;
     width: 90%;
+    max-width: 640px;
     overflow-x: auto;
-    font-size: 12px;
+    margin: 10px auto;
   }
 </style>
 </head>
 <body>
-  <h2>Typing SVG Generator</h2>
-
-  <label>変化前の文章（かななど） <small>例：れいとなる,ぶんしょう</small></label>
-  <textarea id="textBefore" rows="2">れいとなる,ぶんしょう</textarea>
-
-  <label>変化後の文章（漢字など） <small>例：例となる,文章</small></label>
-  <textarea id="textAfter" rows="2">例となる,文章</textarea>
-
-  <label>文字サイズ</label>
+  <h2>SVG文章アニメーションツール</h2>
+  <textarea id="inputText" rows="2" placeholder="例: れいとなる,ぶんしょう"></textarea>
+  <h3>文字サイズ</h3>
   <input type="number" id="fontSize" value="32">
-
+  
   <div class="color-row">
-    <div>
-      <label for="fontColor">文字色</label><br>
-      <input type="color" id="fontColor" value="#000000">
-    </div>
-    <div>
-      <label for="bgColor">背景色</label><br>
-      <input type="color" id="bgColor" value="#ffffff">
-    </div>
+    <label>文字色</label>
+    <input type="color" id="textColor" value="#000000">
+    <label>背景色</label>
+    <input type="color" id="bgColor" value="#ffffff">
   </div>
 
-  <div class="buttons">
+  <div class="button-row">
     <button id="generate">SVGを生成</button>
     <button id="copyCode">コードをコピー</button>
     <button id="saveFile">保存</button>
   </div>
 
-  <div class="output" id="preview">SVGプレビュー</div>
+  <div id="preview"></div>
 
   <h3>SVGコード</h3>
   <pre id="svgCode"></pre>
 
 <script>
 document.getElementById("generate").onclick = function() {
-  const before = document.getElementById("textBefore").value.split(",");
-  const after = document.getElementById("textAfter").value.split(",");
-  const fontSize = document.getElementById("fontSize").value;
-  const fontColor = document.getElementById("fontColor").value;
+  const input = document.getElementById("inputText").value.trim();
+  const phrases = input.split(",");
+  const fontSize = parseInt(document.getElementById("fontSize").value);
+  const textColor = document.getElementById("textColor").value;
   const bgColor = document.getElementById("bgColor").value;
 
   let svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288" viewBox="0 0 672 288">
-<style>
-  text {
-    font-family: 'Noto Sans JP', sans-serif;
-    font-size: ${fontSize}px;
-    fill: ${fontColor};
-  }
-  .dashed { text-decoration: underline dashed ${fontColor}; }
-  .solid { text-decoration: underline solid ${fontColor}; }
-  .cursor { animation: blink 1s steps(1) infinite; }
-  @keyframes blink { 50% { opacity: 0; } }
-</style>
-<rect width="100%" height="100%" fill="${bgColor}"/>
-<g id="typing"></g>
-<script><![CDATA[
-  const beforeLines = ${JSON.stringify(before)};
-  const afterLines = ${JSON.stringify(after)};
-  const g = document.getElementById('typing');
-  const lineHeight = ${fontSize} * 1.5;
-  const speed = 150;
-  let line = 0, i = 0, phase = 0;
-  const cursor = document.createElementNS('http://www.w3.org/2000/svg','rect');
-  cursor.setAttribute('width', 2);
-  cursor.setAttribute('height', ${fontSize});
-  cursor.setAttribute('fill', '${fontColor}');
-  cursor.setAttribute('class', 'cursor');
-  g.appendChild(cursor);
-  
-  const textEl = document.createElementNS('http://www.w3.org/2000/svg','text');
-  textEl.setAttribute('x', 20);
-  textEl.setAttribute('y', 60);
-  textEl.setAttribute('class', 'dashed');
-  g.appendChild(textEl);
-
-  function nextChar() {
-    if (line >= beforeLines.length) return;
-    const kana = beforeLines[line];
-    const kanji = afterLines[line] || '';
-    if (phase === 0 && i <= kana.length) {
-      textEl.textContent = kana.slice(0, i);
-      cursor.setAttribute('x', 20 + i * ${fontSize} * 0.6);
-      cursor.setAttribute('y', 60 + lineHeight * line - ${fontSize});
-      i++;
-      setTimeout(nextChar, speed);
-    } else if (phase === 0 && i > kana.length) {
-      textEl.setAttribute('class', 'solid');
-      textEl.textContent = kanji;
-      phase = 1;
-      i = 0;
-      line++;
-      if (line < beforeLines.length) {
-        setTimeout(() => {
-          const newText = textEl.cloneNode();
-          newText.setAttribute('y', 60 + lineHeight * line);
-          newText.setAttribute('class', 'dashed');
-          g.appendChild(newText);
-          textEl.replaceWith(newText);
-          cursor.setAttribute('y', 60 + lineHeight * line - ${fontSize});
-          setTimeout(nextChar, 800);
-        }, 500);
-      }
+<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288">
+  <rect width="100%" height="100%" fill="${bgColor}"/>
+  <style>
+    text {
+      font-size: ${fontSize}px;
+      fill: ${textColor};
+      font-family: 'Noto Sans JP', sans-serif;
+      dominant-baseline: middle;
+      text-anchor: middle;
     }
-  }
-  nextChar();
-]]></script>
-</svg>`;
+    .cursor {
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+  </style>
+`;
+
+  let y = 144;
+  let x = 336;
+  let dy = -fontSize * (phrases.length - 1) / 2;
+
+  phrases.forEach((phrase, index) => {
+    svg += `
+    <text x="${x}" y="${y + dy + index * fontSize * 1.4}">
+      <tspan>${phrase}</tspan>
+      <tspan class="cursor">|</tspan>
+    </text>`;
+  });
+
+  svg += `</svg>`;
 
   document.getElementById("preview").innerHTML = svg;
   document.getElementById("svgCode").textContent = svg;
@@ -188,12 +134,14 @@ document.getElementById("copyCode").onclick = function() {
 
 // ファイル保存
 document.getElementById("saveFile").onclick = function() {
-  const code = document.getElementById("svgCode").textContent;
-  const blob = new Blob([code], { type: "image/svg+xml" });
+  const svg = document.getElementById("svgCode").textContent;
+  const blob = new Blob([svg], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "typing.svg";
+  a.href = url;
+  a.download = "animation.svg";
   a.click();
+  URL.revokeObjectURL(url);
 };
 </script>
 </body>
