@@ -160,12 +160,19 @@ function downloadSVG() {
 
 async function generateAPNG() {
   const object = document.querySelector('#preview object');
-  if (!object) {
-    alert('まずSVG生成！');
-    return;
+  if (!object) return alert("まずSVGを生成してください。");
+
+  // --- ライブラリを順に読み込み ---
+  if (!window.pako) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.body.appendChild(s);
+    });
   }
 
-  // UPNGライブラリを動的ロード
   if (!window.UPNG) {
     await new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -175,55 +182,40 @@ async function generateAPNG() {
       document.body.appendChild(s);
     });
   }
+  // -------------------------------
 
-  // SVGドキュメントを取得（object内の中身）
   const svgDoc = object.contentDocument;
-  if (!svgDoc) {
-    alert("SVGが読み込まれていません。少し待ってから再試行してください。");
-    return;
-  }
+  if (!svgDoc) return alert("SVGがまだ読み込まれていません。");
+  const svgEl = svgDoc.querySelector('svg');
+  const width = 800, height = 400;
 
-  const svgEl = svgDoc.querySelector("svg");
-  const width = svgEl.viewBox.baseVal.width || svgEl.width.baseVal.value || 800;
-  const height = svgEl.viewBox.baseVal.height || svgEl.height.baseVal.value || 400;
-
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
-  const ctx = canvas.getContext("2d");
-
+  const ctx = canvas.getContext('2d');
   const frames = [];
-  const frameDelay = 100; // ms
-  const totalFrames = 60; // 6秒分
+  const frameDelay = 100;
 
-  for (let i = 0; i < totalFrames; i++) {
-    // SVG内部をそのまま画像として描画
-    const svgData = new XMLSerializer().serializeToString(svgEl);
+  for (let i = 0; i < 60; i++) {
+    const data = new XMLSerializer().serializeToString(svgEl);
     const img = new Image();
-    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     img.src = url;
     await img.decode();
-
     ctx.clearRect(0, 0, width, height);
     ctx.drawImage(img, 0, 0);
-
-    const pngBlob = await new Promise(r => canvas.toBlob(r, "image/png"));
-    const buffer = await pngBlob.arrayBuffer();
-    frames.push(new Uint8Array(buffer));
-
+    const b = await new Promise(r => canvas.toBlob(r, 'image/png'));
+    frames.push(new Uint8Array(await b.arrayBuffer()));
     URL.revokeObjectURL(url);
     await new Promise(r => setTimeout(r, frameDelay));
   }
 
-  const delays = new Array(frames.length).fill(frameDelay);
-  const apng = UPNG.encode(frames, width, height, 0, delays);
-  const apngBlob = new Blob([apng], { type: "image/png" });
-  const apngUrl = URL.createObjectURL(apngBlob);
-
-  const a = document.createElement("a");
-  a.href = apngUrl;
-  a.download = "typing.apng";
+  const apng = UPNG.encode(frames, width, height, 0, new Array(frames.length).fill(frameDelay));
+  const blob = new Blob([apng], { type: 'image/png' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'typing.apng';
   a.click();
-  URL.revokeObjectURL(apngUrl);
 }
