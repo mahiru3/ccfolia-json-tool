@@ -31,3 +31,11 @@ button {
   height: 200px;
   margin-top: 1em;
 }
+table {
+  border-collapse: collapse;
+  margin-top: 1em;
+}
+th, td {
+  border: 1px solid #ccc;
+  padding: 0.5em;
+}
