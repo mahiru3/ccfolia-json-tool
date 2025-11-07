@@ -1,18 +1,34 @@
+function addRow() {
+  const tbody = document.querySelector('#inputTable tbody');
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="text" class="before"></td>
+    <td><input type="text" class="after"></td>
+    <td><input type="checkbox" class="break" checked></td>
+  `;
+  tbody.appendChild(row);
+}
+
+function getInputData() {
+  const rows = document.querySelectorAll('#inputTable tbody tr');
+  const result = [];
+  rows.forEach(row => {
+    const before = row.querySelector('.before').value.trim();
+    const after = row.querySelector('.after').value.trim();
+    const breakLine = row.querySelector('.break').checked;
+    if (before) {
+      result.push({ before, after: after || before, break: breakLine });
+    }
+  });
+  return result;
+}
+
 function generateSVG() {
-  const before = document.getElementById('before').value.trim();
-  if (!before) return alert('変化前を入力してください');
-  const after = document.getElementById('after').value.trim();
+  const inputData = getInputData();
   const fontSize = parseInt(document.getElementById('fontSize').value, 10);
   const fontColor = document.getElementById('fontColor').value;
   const bgColor = document.getElementById('bgColor').value;
   const speed = parseInt(document.getElementById('speed').value, 10);
-  const textAlign = document.getElementById('textAlign').value;
-  const lineOffset = parseInt(document.getElementById('lineOffset').value, 10);
-  const underlineAlign = document.getElementById('underlineAlign').value;
-
-  const beforeArr = before.split(',').map(s => s.trim());
-  let afterArr = after ? after.split(',').map(s => s.trim()) : [];
-  while (afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
 
   const lineHeight = fontSize * 1.4;
   const underlineY = fontSize * 0.6;
@@ -23,31 +39,30 @@ function generateSVG() {
     .undashed { stroke: ${fontColor}; stroke-width: 1; }
     .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-    text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: ${textAlign}; }
+    text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
   `;
 
-  beforeArr.forEach((kana, i) => {
-    const y = lineOffset + i * lineHeight;
+  let y = fontSize;
+  inputData.forEach((item, i) => {
     lines.push(`
       <g id="line${i}" transform="translate(336, ${y})">
         <text id="text${i}"></text>
         <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="-100" x2="100" class="dash"/>
       </g>`);
+    if (item.break) y += lineHeight;
   });
 
   const svgScript = `
-    const before = ${JSON.stringify(beforeArr)};
-    const after = ${JSON.stringify(afterArr)};
+    const inputData = ${JSON.stringify(inputData)};
     const speed = ${speed};
     const fontSize = ${fontSize};
-    const underlineAlign = "${underlineAlign}";
     const cursor = document.getElementById('cursor');
 
     async function typeLine(i) {
       const textEl = document.getElementById('text'+i);
       const underline = document.getElementById('underline'+i);
-      const kana = before[i];
-      const kanji = after[i];
+      const kana = inputData[i].before;
+      const kanji = inputData[i].after;
       let str = '';
       for (let j = 0; j < kana.length; j++) {
         str += kana[j];
@@ -57,37 +72,20 @@ function generateSVG() {
         textEl.setAttribute('x', 0);
         cursor.setAttribute('x', 336 + len / 2);
         cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize/2);
-        // 下線追随
-        if (underlineAlign === 'center') {
-          underline.setAttribute('x1', -len/2);
-          underline.setAttribute('x2', len/2);
-        } else if (underlineAlign === 'left') {
-          underline.setAttribute('x1', 0);
-          underline.setAttribute('x2', len);
-        } else if (underlineAlign === 'right') {
-          underline.setAttribute('x1', -len);
-          underline.setAttribute('x2', 0);
-        }
+        underline.setAttribute('x1', -len/2);
+        underline.setAttribute('x2', len/2);
       }
       await new Promise(r => setTimeout(r, 400));
       textEl.textContent = kanji;
       const len = textEl.getComputedTextLength();
       textEl.setAttribute('x', 0);
-      if (underlineAlign === 'center') {
-        underline.setAttribute('x1', -len/2);
-        underline.setAttribute('x2', len/2);
-      } else if (underlineAlign === 'left') {
-        underline.setAttribute('x1', 0);
-        underline.setAttribute('x2', len);
-      } else if (underlineAlign === 'right') {
-        underline.setAttribute('x1', -len);
-        underline.setAttribute('x2', 0);
-      }
+      underline.setAttribute('x1', -len/2);
+      underline.setAttribute('x2', len/2);
       underline.setAttribute('class', 'undashed');
     }
 
     async function animate() {
-      for (let i = 0; i < before.length; i++) {
+      for (let i = 0; i < inputData.length; i++) {
         await typeLine(i);
       }
       cursor.remove();
@@ -118,19 +116,4 @@ function generateSVG() {
   object.height = 288;
 
   preview.appendChild(object);
-  document.getElementById('svgCode').value = svg;
-}
-
-function copyCode() {
-  const code = document.getElementById('svgCode').value;
-  navigator.clipboard.writeText(code).then(() => alert('コピーしました'));
-}
-
-function downloadSVG() {
-  const code = document.getElementById('svgCode').value;
-  const blob = new Blob([code], { type: 'image/svg+xml' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'typing.svg';
-  a.click();
-}
+  document.getElementById('svgCode').value
