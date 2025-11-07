@@ -36,26 +36,25 @@ function generateSVG() {
   const underlineY = fontSize * 0.6;
   const charsPerLine = 16;
   const charWidth = fontSize * 0.6;
-  const lineCenter = 336;
 
-  const lines = [];
   const styles = `
     .dash { stroke-dasharray: 4 2; stroke: ${fontColor}; stroke-width: 1; }
     .undashed { stroke: ${fontColor}; stroke-width: 1; }
     .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-    text { font-family: 'Noto Sans JP', sans-serif; font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
+    text { font-family: 'Noto Sans JP', sans-serif; font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: start; }
   `;
 
   let y = fontSize;
+  const lines = [];
 
   inputData.forEach((item, i) => {
-    // 中央を基準に開始位置を計算（1文字=charWidth）
-    const x = lineCenter - (charsPerLine / 2 - (item.start - 1)) * charWidth;
+    // 左揃え開始位置（左端基準）
+    const x = (item.start - 1) * charWidth + 20; // 左に少し余白
     lines.push(`
       <g id="line${i}" transform="translate(${x}, ${y})">
-        <text id="text${i}"></text>
-        <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="-100" x2="100" class="dash"/>
+        <text id="text${i}" x="0"></text>
+        <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="0" x2="200" class="dash"/>
       </g>`);
     if (item.break) y += lineHeight;
   });
@@ -77,18 +76,14 @@ function generateSVG() {
         textEl.textContent = str;
         await new Promise(r => setTimeout(r, speed));
         const len = textEl.getComputedTextLength();
-        textEl.setAttribute('x', 0);
-        cursor.setAttribute('x', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0].replace('translate(', '')) + len / 2);
-        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize/2);
-        underline.setAttribute('x1', -len/2);
-        underline.setAttribute('x2', len/2);
+        cursor.setAttribute('x', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0]) + len);
+        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize / 2);
+        underline.setAttribute('x2', len);
       }
       await new Promise(r => setTimeout(r, 400));
       textEl.textContent = kanji;
       const len = textEl.getComputedTextLength();
-      textEl.setAttribute('x', 0);
-      underline.setAttribute('x1', -len/2);
-      underline.setAttribute('x2', len/2);
+      underline.setAttribute('x2', len);
       underline.setAttribute('class', 'undashed');
     }
 
