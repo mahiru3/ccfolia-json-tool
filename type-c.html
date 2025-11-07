@@ -2,14 +2,29 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>SVG Animation Converter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVGアニメーション変換ツール (type-c)</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sakura.css/css/sakura.css">
 <script src="type-c.js" defer></script>
 </head>
 <body>
-  <h1>SVG アニメーション変換ツール</h1>
+  <h1>SVGアニメーション変換ツール</h1>
+  <p>スクリプト入りSVGを読み込み、以下の形式に変換します。</p>
+  <ul>
+    <li>🎞️ <strong>SMIL SVG</strong>（スクリプトなし・ココフォリア対応）</li>
+    <li>🖼️ <strong>APNG</strong>（ブラウザ・SNS・OBS対応）</li>
+  </ul>
+
+  <hr>
+  <label>SVGファイルを選択：</label><br>
   <input type="file" id="svgFile" accept=".svg"><br><br>
+
   <button id="convertSmil">SMIL SVGに変換</button>
   <button id="convertApng">APNGに変換</button>
+
+  <hr>
+  <h3>プレビュー</h3>
+  <div id="preview" style="border:1px solid #ccc;padding:10px;max-width:800px;"></div>
   <div id="output"></div>
 </body>
 </html>
