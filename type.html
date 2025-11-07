@@ -144,8 +144,8 @@ Usage:
         await new Promise(r => setTimeout(r, speed));
         const len = textEl.getComputedTextLength();
         textEl.setAttribute('x', 0);
-        cursor.setAttribute('x', len / 2);
-        cursor.setAttribute('y', -${fontSize}/2);
+        cursor.setAttribute('x', 336 + len / 2);
+        cursor.setAttribute('y', textEl.getAttribute('y') || 0);
       }
       await new Promise(r => setTimeout(r, 400));
       textEl.textContent = kanji;
