@@ -83,7 +83,17 @@ function generateSVG() {
         await new Promise(r => setTimeout(r, speed));
 
         const len = textEl.getComputedTextLength();
-        cursor.setAttribute('x', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0]) + len);
+        // 旧
+// const x = parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0]) + len;
+
+// 新
+const transform = textEl.parentNode.getAttribute('transform'); // "translate(20, 48)"
+const [xStr, yStr] = transform.match(/[\d.]+/g) || [0, 0]; // 正規表現で数字だけ抜き出す
+const x = parseFloat(xStr) + len;
+const y = parseFloat(yStr) - fontSize;
+cursor.setAttribute('x', x);
+cursor.setAttribute('y', y);
+
         cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize);
         underline.setAttribute('x2', len);
       }
