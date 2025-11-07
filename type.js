@@ -5,6 +5,7 @@ function addRow() {
     <td><input type="text" class="before"></td>
     <td><input type="text" class="after"></td>
     <td><input type="checkbox" class="break" checked></td>
+    <td><input type="number" class="start" value="1" min="1" max="16"></td>
   `;
   tbody.appendChild(row);
 }
@@ -24,7 +25,6 @@ function getInputData() {
   return result;
 }
 
-
 function generateSVG() {
   const inputData = getInputData();
   const fontSize = parseInt(document.getElementById('fontSize').value, 10);
@@ -34,6 +34,9 @@ function generateSVG() {
 
   const lineHeight = fontSize * 1.4;
   const underlineY = fontSize * 0.6;
+  const charsPerLine = 16;
+  const charWidth = fontSize * 0.6;
+  const lineCenter = 336;
 
   const lines = [];
   const styles = `
@@ -41,15 +44,13 @@ function generateSVG() {
     .undashed { stroke: ${fontColor}; stroke-width: 1; }
     .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-    text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
+    text { font-family: 'Noto Sans JP', sans-serif; font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
   `;
 
   let y = fontSize;
-  const charsPerLine = 16;
-  const charWidth = fontSize * 0.6;
-  const lineCenter = 336;
 
   inputData.forEach((item, i) => {
+    // 中央を基準に開始位置を計算（1文字=charWidth）
     const x = lineCenter - (charsPerLine / 2 - (item.start - 1)) * charWidth;
     lines.push(`
       <g id="line${i}" transform="translate(${x}, ${y})">
@@ -58,7 +59,6 @@ function generateSVG() {
       </g>`);
     if (item.break) y += lineHeight;
   });
-
 
   const svgScript = `
     const inputData = ${JSON.stringify(inputData)};
@@ -78,7 +78,7 @@ function generateSVG() {
         await new Promise(r => setTimeout(r, speed));
         const len = textEl.getComputedTextLength();
         textEl.setAttribute('x', 0);
-        cursor.setAttribute('x', 336 + len / 2);
+        cursor.setAttribute('x', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0].replace('translate(', '')) + len / 2);
         cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize/2);
         underline.setAttribute('x1', -len/2);
         underline.setAttribute('x2', len/2);
@@ -123,8 +123,23 @@ function generateSVG() {
   object.width = 672;
   object.height = 288;
 
-    preview.appendChild(object);
-
-  // SVGコードをテキストエリアに出力（コピーボタン用）
+  preview.appendChild(object);
   document.getElementById('svgCode').value = svg;
+}
+
+function copyCode() {
+  const code = document.getElementById('svgCode').value;
+  navigator.clipboard.writeText(code);
+  alert('SVGコードをコピーしました！');
+}
+
+function downloadSVG() {
+  const svg = document.getElementById('svgCode').value;
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'typing.svg';
+  a.click();
+  URL.revokeObjectURL(url);
 }
