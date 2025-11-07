@@ -16,12 +16,14 @@ function getInputData() {
     const before = row.querySelector('.before').value.trim();
     const after = row.querySelector('.after').value.trim();
     const breakLine = row.querySelector('.break').checked;
+    const start = parseInt(row.querySelector('.start').value || '1', 10);
     if (before) {
-      result.push({ before, after: after || before, break: breakLine });
+      result.push({ before, after: after || before, break: breakLine, start });
     }
   });
   return result;
 }
+
 
 function generateSVG() {
   const inputData = getInputData();
