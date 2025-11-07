@@ -34,7 +34,7 @@ function generateSVG() {
 
   const lineHeight = fontSize * 1.6;
   const underlineY = fontSize * 0.85;
-  const charWidth = fontSize * 0.6; // 1文字幅の目安
+  const charWidth = fontSize * 0.6;
 
   const styles = `
     .dash { stroke-dasharray: 4 2; stroke: ${fontColor}; stroke-width: 1; }
@@ -54,7 +54,7 @@ function generateSVG() {
   let y = fontSize * 1.5;
 
   inputData.forEach((item, i) => {
-    const x = (item.start - 1) * charWidth + 20; // 左端＋開始位置
+    const x = (item.start - 1) * charWidth + 20;
     lines.push(`
       <g id="line${i}" transform="translate(${x}, ${y})">
         <text id="text${i}" x="0" y="0"></text>
@@ -98,7 +98,6 @@ function generateSVG() {
     async function animate() {
       for (let i = 0; i < inputData.length; i++) {
         await typeLine(i);
-        // ✅ 次の行が始まる直前に下線を消す
         const underline = document.getElementById('underline' + i);
         await new Promise(r => setTimeout(r, 300));
         underline.setAttribute('visibility', 'hidden');
@@ -156,7 +155,7 @@ async function generateAPNG() {
     return;
   }
 
-  // objectの表示を直接キャプチャするため、html2canvasを使用
+  // ライブラリ読込（初回のみ）
   if (!window.html2canvas) {
     await new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -166,7 +165,6 @@ async function generateAPNG() {
       document.body.appendChild(s);
     });
   }
-
   if (!window.UPNG) {
     await new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -178,13 +176,13 @@ async function generateAPNG() {
   }
 
   const frames = [];
-  const frameDelay = 100; // msごとのキャプチャ間隔
-  const totalDuration = 5000; // 全体を5秒キャプチャ
+  const frameDelay = 100;
+  const totalDuration = 5000;
   const totalFrames = Math.floor(totalDuration / frameDelay);
 
   for (let i = 0; i < totalFrames; i++) {
     const canvas = await html2canvas(object, {
-      backgroundColor: null,  // 透過維持
+      backgroundColor: null,
       scale: 1,
       useCORS: true,
     });
@@ -202,6 +200,5 @@ async function generateAPNG() {
   a.href = url;
   a.download = "typing.apng";
   a.click();
-
   URL.revokeObjectURL(url);
 }
