@@ -6,29 +6,34 @@
 <title>Typing SVG Generator (Kana→Kanji)</title>
 <style>
   :root { --w:672px; --h:288px; }
-  body{
-    background:#111;
-    color:#eee;
+  body {
+    background:#111; color:#eee;
     font-family: "Noto Sans JP", "Segoe UI", sans-serif;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    gap:10px;
-    padding:18px;
+    display:flex; flex-direction:column; align-items:center;
+    gap:10px; padding:18px;
   }
-  textarea,input{ width:90%; max-width:720px; padding:8px; border-radius:6px; border:1px solid #444; background:#222; color:#eee; }
-  label{ font-weight:700; margin-top:6px; display:block; }
-  .row { display:flex; gap:12px; align-items:center; justify-content:center; }
+  textarea,input {
+    width:90%; max-width:720px;
+    padding:8px; border-radius:6px; border:1px solid #444;
+    background:#222; color:#eee;
+  }
+  label { font-weight:700; margin-top:6px; display:block; }
   .color-row { display:flex; gap:14px; align-items:center; }
-  button{
-    background:#0a84ff; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;
+  button {
+    background:#0a84ff; color:white; border:none;
+    padding:8px 12px; border-radius:8px; cursor:pointer;
   }
   #preview {
     width:var(--w); height:var(--h);
-    border:1px solid #444; background:#fff; display:flex; align-items:center; justify-content:center;
+    border:1px solid #444; background:#fff;
+    display:flex; align-items:center; justify-content:center;
     box-shadow:0 6px 18px rgba(0,0,0,0.6);
   }
-  pre{ width:90%; max-width:720px; background:#0b0b0b; color:#b8f2c2; padding:10px; overflow:auto; border-radius:6px; border:1px solid #222; }
+  pre {
+    width:90%; max-width:720px;
+    background:#0b0b0b; color:#b8f2c2;
+    padding:10px; overflow:auto; border-radius:6px; border:1px solid #222;
+  }
   .controls { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
   .small { font-size:0.9rem; color:#ccc; }
 </style>
@@ -58,201 +63,84 @@
 
   <div id="preview">プレビュー（ここにSVGが表示されます）</div>
 
-  <h3>SVGコード（下のボタンでコピーまたは保存できます）</h3>
+  <h3>SVGコード</h3>
   <pre id="svgCode"></pre>
 
 <script>
-// Helper: escape for embedding strings
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 
 function generateSVG(){
-  const beforeRaw = document.getElementById('before').value.trim();
-  const afterRaw = document.getElementById('after').value.trim();
-  const fontSize = parseInt(document.getElementById('fontSize').value) || 32;
-  const fontColor = document.getElementById('fontColor').value;
-  const bgColor = document.getElementById('bgColor').value;
+  var beforeRaw=document.getElementById("before").value.trim();
+  var afterRaw=document.getElementById("after").value.trim();
+  var fontSize=parseInt(document.getElementById("fontSize").value)||32;
+  var fontColor=document.getElementById("fontColor").value;
+  var bgColor=document.getElementById("bgColor").value;
 
-  // split by comma, trim each
-  const beforeArr = beforeRaw.length ? beforeRaw.split(',').map(s=>s.trim()) : [];
-  const afterArr = afterRaw.length ? afterRaw.split(',').map(s=>s.trim()) : [];
+  var beforeArr=beforeRaw.length?beforeRaw.split(",").map(s=>s.trim()):[];
+  var afterArr=afterRaw.length?afterRaw.split(",").map(s=>s.trim()):[];
+  while(afterArr.length<beforeArr.length)afterArr.push(beforeArr[afterArr.length]);
 
-  // ensure same length by padding afterArr with beforeArr if missing
-  while(afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
+  var W=672,H=288;
+  var lineGap=Math.round(fontSize*1.4);
+  var startY=Math.round(H/2-((beforeArr.length-1)/2)*lineGap);
 
-  const W = 672, H = 288;
-  const lineGap = Math.round(fontSize * 1.4);
-  const startY = Math.round(H/2 - ((beforeArr.length-1)/2) * lineGap);
-
-  // Build SVG string. We'll include an embedded script that runs the typing animation inside the SVG.
-  // The embedded script will create text nodes, underline lines, cursor, and animate per-character.
-  const svgParts = [];
-
-  svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
-  svgParts.push(`<rect width="100%" height="100%" fill="${bgColor}"/>`);
-  svgParts.push(`<style>
-    .txt { font-family: 'Noto Sans JP', 'Segoe UI', sans-serif; font-size:${fontSize}px; fill:${fontColor}; dominant-baseline:alphabetic; }
-    .cursor { fill:${fontColor}; animation:blink 1s steps(1) infinite; }
-    .undashed { stroke:${fontColor}; stroke-width:2; stroke-dasharray:0; }
-    .dash { stroke:${fontColor}; stroke-width:2; stroke-dasharray:6 6; }
-    @keyframes blink { 50% { opacity:0 } }
-  </style>`);
-
-  // container groups for each line
-  svgParts.push(`<g id="container">`);
-  for(let i=0;i<beforeArr.length;i++){
-    const y = startY + i*lineGap;
-    // group per line with placeholders
-    svgParts.push(`<g id="line${i}" transform="translate(0, ${y})">
-      <text id="text${i}" class="txt" x="${W/2}" y="0" text-anchor="middle"></text>
-      <line id="underline${i}" x1="0" x2="0" y1="${Math.ceil(fontSize*0.6)}" y2="${Math.ceil(fontSize*0.6)}" class="dash" />
-    </g>`);
+  var svgParts=[];
+  svgParts.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">');
+  svgParts.push('<rect width="100%" height="100%" fill="'+bgColor+'"/>');
+  svgParts.push('<style>.txt{font-family:"Noto Sans JP","Segoe UI",sans-serif;font-size:'+fontSize+'px;fill:'+fontColor+';dominant-baseline:alphabetic;}.cursor{fill:'+fontColor+';animation:blink 1s steps(1) infinite;}.undashed{stroke:'+fontColor+';stroke-width:2;}.dash{stroke:'+fontColor+';stroke-width:2;stroke-dasharray:6 6;}@keyframes blink{50%{opacity:0}}</style>');
+  svgParts.push('<g id="container">');
+  for(var i=0;i<beforeArr.length;i++){
+    var y=startY+i*lineGap;
+    svgParts.push('<g id="line'+i+'" transform="translate(0,'+y+')">'+
+      '<text id="text'+i+'" class="txt" x="'+W/2+'" y="0" text-anchor="middle"></text>'+
+      '<line id="underline'+i+'" x1="0" x2="0" y1="'+Math.ceil(fontSize*0.6)+'" y2="'+Math.ceil(fontSize*0.6)+'" class="dash" />'+
+    '</g>');
   }
-  // create cursor as a rect; it will be moved during typing
-  svgParts.push(`<rect id="cursor" width="2" height="${fontSize}" class="cursor" x="0" y="0" />`);
-  svgParts.push(`</g>`);
-
-  // embed script (CDATA)
-  svgParts.push(`<script><![CDATA[
-    (function(){
-      const before = ${JSON.stringify(beforeArr)};
-      const after = ${JSON.stringify(afterArr)};
-      const W = ${W};
-      const fontSize = ${fontSize};
-      const speed = 120; // ms per char, can be adjusted or exposed in UI
-      const gap = ${lineGap};
-
-      // helpers to measure text length inside svg
-      function textWidth(el, str){
-        el.textContent = str;
-        try { return el.getComputedTextLength(); } catch(e) { return str.length * fontSize * 0.6; }
-      }
-
-      // initial state
-      let lineIndex = 0;
-      let charIndex = 0;
-      let phase = 0; // 0 typing kana, 1 commit & transform, 2 next line typing...
-      const totalLines = before.length;
-      const cursor = document.getElementById('cursor');
-
-      function placeCursorAt(textEl){
-        // center anchor -> we need to compute start x = W/2 - textWidth/2, then cursor x = start + textWidth(current)
-        const currentText = textEl.textContent || '';
-        const w = textWidth(textEl, currentText);
-        const startX = W/2 - w/2;
-        const cx = startX + w;
-        const groupY = textEl.parentNode.transform.baseVal.getItem(0).matrix.f; // translate y
-        textEl.setAttribute('y', 0); // ensure baseline
-        cursor.setAttribute('x', cx);
-        cursor.setAttribute('y', -Math.round(fontSize*0.8)); // align rect to text baseline roughly
-      }
-
-      function setUnderlineToText(lineIdx, textEl, dashed){
-        const line = document.getElementById('underline'+lineIdx);
-        // measure width and position
-        const w = textWidth(textEl, textEl.textContent || '');
-        const startX = W/2 - w/2;
-        line.setAttribute('x1', startX);
-        line.setAttribute('x2', startX + w);
-        // set class
-        if(dashed) { line.setAttribute('class','dash'); } else { line.setAttribute('class','undashed'); }
-      }
-
-      function typeStep(){
-        if(lineIndex >= totalLines){ // finished all
-          cursor.style.display = 'none';
-          return;
-        }
-        const textEl = document.getElementById('text'+lineIndex);
-        const kana = before[lineIndex] || '';
-        const kanji = after[lineIndex] || kana;
-
-        if(charIndex <= kana.length){
-          // phase: typing kana
-          textEl.textContent = kana.slice(0,charIndex);
-          setUnderlineToText(lineIndex, textEl, true);
-          placeCursorAt(textEl);
-          charIndex++;
-          setTimeout(typeStep, speed);
-        } else {
-          // commit => show kanji and switch to solid underline
-          textEl.textContent = kanji;
-          setUnderlineToText(lineIndex, textEl, false);
-          placeCursorAt(textEl);
-          // small pause, then move to next line
-          lineIndex++;
-          charIndex = 0;
-          setTimeout(typeStep, 500);
-        }
-      }
-
-      // initialize empty text for all lines to ensure measurement works
-      for(let i=0;i<totalLines;i++){
-        const te = document.getElementById('text'+i);
-        te.textContent = '';
-        setUnderlineToText(i, te, true);
-      }
-
-      // start typing at first line
-      // position cursor initially near left of center
-      cursor.setAttribute('x', W/2);
-      cursor.setAttribute('y', -Math.round(fontSize*0.8));
-      cursor.style.display = 'block';
-      typeStep();
-    })();
-  ]]></script>`);
-
-  svgParts.push(`</svg>`);
-
-  return svgParts.join('\n');
+  svgParts.push('<rect id="cursor" width="2" height="'+fontSize+'" class="cursor" x="0" y="0" />');
+  svgParts.push('</g>');
+  svgParts.push('<script><![CDATA['+
+    '(function(){'+
+    'const before='+JSON.stringify(beforeArr)+';'+
+    'const after='+JSON.stringify(afterArr)+';'+
+    'const W='+W+';const fontSize='+fontSize+';const speed=120;const gap='+lineGap+';'+
+    'function textWidth(el,str){el.textContent=str;try{return el.getComputedTextLength();}catch(e){return str.length*fontSize*0.6;}}'+
+    'function placeCursorAt(textEl){var currentText=textEl.textContent||"";var w=textWidth(textEl,currentText);var startX=W/2-w/2;var cx=startX+w;var groupY=textEl.parentNode.transform.baseVal.getItem(0).matrix.f;cursor.setAttribute("x",cx);cursor.setAttribute("y",-Math.round(fontSize*0.8));}'+
+    'function setUnderline(lineIdx,textEl,dashed){var line=document.getElementById("underline"+lineIdx);var w=textWidth(textEl,textEl.textContent||"");var startX=W/2-w/2;line.setAttribute("x1",startX);line.setAttribute("x2",startX+w);line.setAttribute("class",dashed?"dash":"undashed");}'+
+    'let lineIndex=0,charIndex=0;const total=before.length;const cursor=document.getElementById("cursor");'+
+    'function step(){if(lineIndex>=total){cursor.style.display="none";return;}var t=document.getElementById("text"+lineIndex);var kana=before[lineIndex];var kanji=after[lineIndex];if(charIndex<=kana.length){t.textContent=kana.slice(0,charIndex);setUnderline(lineIndex,t,true);placeCursorAt(t);charIndex++;setTimeout(step,speed);}else{t.textContent=kanji;setUnderline(lineIndex,t,false);placeCursorAt(t);lineIndex++;charIndex=0;setTimeout(step,500);}}'+
+    'cursor.style.display="block";step();})();'+
+  ']]></script>');
+  svgParts.push('</svg>');
+  return svgParts.join("\n");
 }
 
-// UI wiring
-const genBtn = document.getElementById('generate');
-const preview = document.getElementById('preview');
-const code = document.getElementById('svgCode');
-const copyBtn = document.getElementById('copy');
-const dlBtn = document.getElementById('download');
-
-genBtn.addEventListener('click', ()=>{
-  try {
-    const svg = generateSVG();
-    // show live SVG in preview (as HTML)
-    preview.innerHTML = svg;
-    // show code (escaped)
-    code.textContent = svg;
-  } catch(e){
-    preview.innerHTML = '<div style="color:#f88">生成エラー: '+esc(String(e))+'</div>';
-    code.textContent = '';
+document.getElementById("generate").onclick=function(){
+  try{
+    var svg=generateSVG();
+    document.getElementById("preview").innerHTML=svg;
+    document.getElementById("svgCode").textContent=svg;
+  }catch(e){
+    document.getElementById("preview").innerHTML='<div style="color:#f88">生成エラー:'+esc(String(e))+'</div>';
     console.error(e);
   }
-});
+};
 
-// copy
-copyBtn.addEventListener('click', async ()=>{
-  const txt = code.textContent;
-  if(!txt) { alert('先にSVGを生成してください'); return; }
-  try {
-    await navigator.clipboard.writeText(txt);
-    alert('SVGコードをクリップボードにコピーしました');
-  } catch(e){
-    alert('コピーに失敗しました: '+e);
-  }
-});
+document.getElementById("copy").onclick=async function(){
+  var txt=document.getElementById("svgCode").textContent;
+  if(!txt){alert("先にSVGを生成してください");return;}
+  try{await navigator.clipboard.writeText(txt);alert("SVGコードをコピーしました");}
+  catch(e){alert("コピー失敗:"+e);}
+};
 
-// download
-dlBtn.addEventListener('click', ()=>{
-  const txt = code.textContent;
-  if(!txt) { alert('先にSVGを生成してください'); return; }
-  const blob = new Blob([txt], {type:'image/svg+xml'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'typing.svg';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+document.getElementById("download").onclick=function(){
+  var txt=document.getElementById("svgCode").textContent;
+  if(!txt){alert("先にSVGを生成してください");return;}
+  var blob=new Blob([txt],{type:"image/svg+xml"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url;a.download="typing.svg";a.click();
   URL.revokeObjectURL(url);
-});
+};
 </script>
 </body>
 </html>
