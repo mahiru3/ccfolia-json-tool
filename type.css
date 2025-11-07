@@ -1,41 +1,36 @@
 body {
   font-family: 'Noto Sans JP', sans-serif;
-  margin: 1em;
-  background: #f9f9f9;
-  color: #333;
+  background: #f4f4f4;
+  padding: 20px;
 }
-label {
-  display: block;
-  margin-top: 1em;
-  font-weight: bold;
-}
-textarea, input, select {
-  width: 100%;
-  max-width: 600px;
-  margin-top: 0.3em;
-}
-button {
-  margin: 1em 0.5em 1em 0;
-  padding: 0.5em 1em;
-  font-size: 1em;
-}
-#preview {
-  width: 672px;
-  height: 288px;
-  border: 1px solid #ccc;
-  margin-top: 1em;
-  background: #fff;
-}
-#svgCode {
-  width: 100%;
-  height: 200px;
-  margin-top: 1em;
-}
+
+h1 { margin-bottom: 10px; }
+
 table {
   border-collapse: collapse;
-  margin-top: 1em;
+  margin-bottom: 10px;
+  background: #fff;
 }
+
 th, td {
   border: 1px solid #ccc;
-  padding: 0.5em;
+  padding: 4px 6px;
+}
+
+.options, .buttons {
+  margin: 10px 0;
+}
+
+#preview {
+  border: 1px solid #aaa;
+  width: 700px;
+  height: 300px;
+  margin-top: 10px;
+  background: #fff;
+}
+
+#svgCode {
+  width: 700px;
+  height: 150px;
+  margin-top: 10px;
 }
