@@ -15,6 +15,7 @@ function generateSVG() {
   while (afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
 
   const lineHeight = fontSize * 1.4;
+  const underlineY = fontSize * 0.6;
 
   const lines = [];
   const styles = `
@@ -30,7 +31,7 @@ function generateSVG() {
     lines.push(`
       <g id="line${i}" transform="translate(336, ${y})">
         <text id="text${i}"></text>
-        <line id="underline${i}" y1="0" y2="0" x1="-100" x2="100" class="dash"/>
+        <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="-100" x2="100" class="dash"/>
       </g>`);
   });
 
@@ -56,6 +57,17 @@ function generateSVG() {
         textEl.setAttribute('x', 0);
         cursor.setAttribute('x', 336 + len / 2);
         cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize/2);
+        // 下線追随
+        if (underlineAlign === 'center') {
+          underline.setAttribute('x1', -len/2);
+          underline.setAttribute('x2', len/2);
+        } else if (underlineAlign === 'left') {
+          underline.setAttribute('x1', 0);
+          underline.setAttribute('x2', len);
+        } else if (underlineAlign === 'right') {
+          underline.setAttribute('x1', -len);
+          underline.setAttribute('x2', 0);
+        }
       }
       await new Promise(r => setTimeout(r, 400));
       textEl.textContent = kanji;
