@@ -1,4 +1,4 @@
-// 共通ダウンロード関数がここ
+// 共通ダウンロード関数
 function download(filename, content) {
   const blob = content instanceof Blob ? content : new Blob([content], { type: "text/plain" });
   const a = document.createElement("a");
