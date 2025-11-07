@@ -156,32 +156,38 @@ async function generateAPNG() {
     return;
   }
 
-  const svgDoc = object.contentDocument;
-  const svgEl = svgDoc.querySelector('svg');
-  const width = svgEl.viewBox.baseVal.width || svgEl.width.baseVal.value;
-  const height = svgEl.viewBox.baseVal.height || svgEl.height.baseVal.value;
+  // objectの表示を直接キャプチャするため、html2canvasを使用
+  if (!window.html2canvas) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.body.appendChild(s);
+    });
+  }
 
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const ctx = canvas.getContext('2d');
+  if (!window.UPNG) {
+    await new Promise((resolve, reject) => {
+      const s = document.createElement("script");
+      s.src = "https://cdn.jsdelivr.net/npm/upng-js@2.1.0/UPNG.js";
+      s.onload = resolve;
+      s.onerror = reject;
+      document.body.appendChild(s);
+    });
+  }
 
   const frames = [];
-  const frameDelay = 100; // msごとのキャプチャ間隔（速さに応じて調整可能）
-  const totalDuration = 5000; // 全体を5秒間キャプチャ（必要なら調整）
+  const frameDelay = 100; // msごとのキャプチャ間隔
+  const totalDuration = 5000; // 全体を5秒キャプチャ
   const totalFrames = Math.floor(totalDuration / frameDelay);
 
-  // 一時的に静止画を描画するImageオブジェクト
-  const img = new Image();
-  const svgBlob = new Blob([document.getElementById('svgCode').value], { type: 'image/svg+xml' });
-  const svgURL = URL.createObjectURL(svgBlob);
-  img.src = svgURL;
-
-  await new Promise(res => { img.onload = res; });
-
   for (let i = 0; i < totalFrames; i++) {
-    ctx.clearRect(0, 0, width, height);
-    ctx.drawImage(img, 0, 0, width, height);
+    const canvas = await html2canvas(object, {
+      backgroundColor: null,  // 透過維持
+      scale: 1,
+      useCORS: true,
+    });
     const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
     const arrayBuffer = await blob.arrayBuffer();
     frames.push(new Uint8Array(arrayBuffer));
@@ -189,7 +195,7 @@ async function generateAPNG() {
   }
 
   const delays = new Array(frames.length).fill(frameDelay);
-  const apng = UPNG.encode(frames, width, height, 0, delays);
+  const apng = UPNG.encode(frames, frames[0].width, frames[0].height, 0, delays);
   const apngBlob = new Blob([apng], { type: "image/png" });
   const url = URL.createObjectURL(apngBlob);
   const a = document.createElement("a");
@@ -197,5 +203,5 @@ async function generateAPNG() {
   a.download = "typing.apng";
   a.click();
 
-  URL.revokeObjectURL(svgURL);
+  URL.revokeObjectURL(url);
 }
