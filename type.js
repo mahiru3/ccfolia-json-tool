@@ -93,7 +93,19 @@ function generateSVG() {
   <script><![CDATA[${svgScript}]]></script>
 </svg>`;
 
-  document.getElementById('preview').innerHTML = svg;
+  const preview = document.getElementById('preview');
+  preview.innerHTML = '';
+
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+
+  const object = document.createElement('object');
+  object.type = 'image/svg+xml';
+  object.data = url;
+  object.width = 672;
+  object.height = 288;
+
+  preview.appendChild(object);
   document.getElementById('svgCode').value = svg;
 }
 
@@ -105,4 +117,8 @@ function copyCode() {
 function downloadSVG() {
   const code = document.getElementById('svgCode').value;
   const blob = new Blob([code], { type: 'image/svg+xml' });
-  const a = document.createElement
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'typing.svg';
+  a.click();
+}
