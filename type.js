@@ -42,14 +42,32 @@ function generateSVG() {
     text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
   `;
 
-  let y = fontSize;
+   let y = fontSize;
+  let xOffset = 0; // ← 横方向の開始位置を記録
+  const maxWidth = 672; // SVGの横幅
+
   inputData.forEach((item, i) => {
+    const groupX = 336 + xOffset; // 中央(336) + 横方向オフセット
     lines.push(`
-      <g id="line${i}" transform="translate(336, ${y})">
+      <g id="line${i}" transform="translate(${groupX}, ${y})">
         <text id="text${i}"></text>
         <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="-100" x2="100" class="dash"/>
       </g>`);
-    if (item.break) y += lineHeight;
+
+    // 改行がある場合 → 次の行に移動
+    if (item.break) {
+      y += lineHeight;
+      xOffset = 0; // 横位置リセット
+    } else {
+      // 改行なし → 前行の漢字の文字幅を計算して次行の開始位置をずらす
+      const len = item.after.length * fontSize * 0.6; // 文字幅の概算
+      xOffset += len;
+      // 画面端を超えそうなら改行
+      if (336 + xOffset > maxWidth - 50) {
+        y += lineHeight;
+        xOffset = 0;
+      }
+    }
   });
 
   const svgScript = `
