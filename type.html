@@ -1,146 +1,189 @@
-<!doctype html>
+<!--
+type.html - Typing SVG Generator — Kana→Kanji
+MIT License
+Usage:
+- 入力例:
+  - 変化前: れいとなる,ぶんしょう
+  - 変化後: 例となる,文章
+- 「SVGを生成」でアニメ付きSVGを表示・コピー・保存できます。
+-->
+
+<!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=672, height=288" />
-<title>Typing SVG Generator (Kana→Kanji)</title>
-<style>
-  :root { --w:672px; --h:288px; }
-  body {
-    background:#111; color:#eee;
-    font-family: "Noto Sans JP", "Segoe UI", sans-serif;
-    display:flex; flex-direction:column; align-items:center;
-    gap:10px; padding:18px;
-  }
-  textarea,input {
-    width:90%; max-width:720px;
-    padding:8px; border-radius:6px; border:1px solid #444;
-    background:#222; color:#eee;
-  }
-  label { font-weight:700; margin-top:6px; display:block; }
-  .color-row { display:flex; gap:14px; align-items:center; }
-  button {
-    background:#0a84ff; color:white; border:none;
-    padding:8px 12px; border-radius:8px; cursor:pointer;
-  }
-  #preview {
-    width:var(--w); height:var(--h);
-    border:1px solid #444; background:#fff;
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 6px 18px rgba(0,0,0,0.6);
-  }
-  pre {
-    width:90%; max-width:720px;
-    background:#0b0b0b; color:#b8f2c2;
-    padding:10px; overflow:auto; border-radius:6px; border:1px solid #222;
-  }
-  .controls { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
-  .small { font-size:0.9rem; color:#ccc; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=720" />
+  <title>Typing SVG Generator</title>
+  <style>
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      margin: 1em;
+      background: #f9f9f9;
+      color: #333;
+    }
+    label {
+      display: block;
+      margin-top: 1em;
+      font-weight: bold;
+    }
+    textarea, input[type="number"], input[type="color"], input[type="range"] {
+      width: 100%;
+      max-width: 600px;
+      margin-top: 0.3em;
+    }
+    button {
+      margin: 1em 0.5em 1em 0;
+      padding: 0.5em 1em;
+      font-size: 1em;
+    }
+    #preview {
+      width: 672px;
+      height: 288px;
+      border: 1px solid #ccc;
+      margin-top: 1em;
+      background: #fff;
+    }
+    #svgCode {
+      width: 100%;
+      height: 200px;
+      margin-top: 1em;
+    }
+  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h2>SVG 文章タイピングジェネレータ</h2>
+  <h1>Typing SVG Generator</h1>
 
-  <label>変化前（かな） — カンマで区切る（例: れいとなる,ぶんしょう）</label>
-  <textarea id="before" rows="2">れいとなる,ぶんしょう</textarea>
+  <label for="before">変化前（かな）</label>
+  <textarea id="before" rows="2" placeholder="れいとなる,ぶんしょう" aria-label="変化前（かな）"></textarea>
 
-  <label>変化後（漢字） — 同じ数の要素にしてください（例: 例となる,文章）</label>
-  <textarea id="after" rows="2">例となる,文章</textarea>
+  <label for="after">変化後（漢字）</label>
+  <textarea id="after" rows="2" placeholder="例となる,文章" aria-label="変化後（漢字）"></textarea>
 
-  <label>文字サイズ</label>
-  <input id="fontSize" type="number" value="32" min="8" max="120" />
+  <label for="fontSize">文字サイズ（px）</label>
+  <input type="number" id="fontSize" value="32" min="8" max="100" aria-label="文字サイズ">
 
-  <div class="color-row">
-    <div><label class="small">文字色</label><input id="fontColor" type="color" value="#000000" /></div>
-    <div><label class="small">背景色</label><input id="bgColor" type="color" value="#ffffff" /></div>
+  <label for="fontColor">文字色</label>
+  <input type="color" id="fontColor" value="#000000" aria-label="文字色">
+
+  <label for="bgColor">背景色</label>
+  <input type="color" id="bgColor" value="#ffffff" aria-label="背景色">
+
+  <label for="speed">タイピング速度（ms/文字）</label>
+  <input type="range" id="speed" min="20" max="500" value="120" step="10" aria-label="タイピング速度">
+
+  <div>
+    <button onclick="generateSVG()" aria-label="SVGを生成">SVGを生成</button>
+    <button onclick="copyCode()" aria-label="コードをコピー">コードをコピー</button>
+    <button onclick="downloadSVG()" aria-label="SVGを保存">SVGを保存</button>
   </div>
 
-  <div class="controls">
-    <button id="generate">SVGを生成</button>
-    <button id="copy">コードをコピー</button>
-    <button id="download">SVGを保存</button>
-  </div>
+  <div id="preview"></div>
+  <textarea id="svgCode" readonly></textarea>
 
-  <div id="preview">プレビュー（ここにSVGが表示されます）</div>
+  <script>
+    function escapeXML(str) {
+      return str.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+    }
 
-  <h3>SVGコード</h3>
-  <pre id="svgCode"></pre>
+    function generateSVG() {
+      const before = document.getElementById('before').value.trim();
+      if (!before) return alert('変化前を入力してください');
+      const after = document.getElementById('after').value.trim();
+      const fontSize = parseInt(document.getElementById('fontSize').value, 10);
+      const fontColor = document.getElementById('fontColor').value;
+      const bgColor = document.getElementById('bgColor').value;
+      const speed = parseInt(document.getElementById('speed').value, 10);
 
-<script>
-function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+      const beforeArr = before.split(',').map(s => s.trim());
+      let afterArr = after ? after.split(',').map(s => s.trim()) : [];
+      while (afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
 
-function generateSVG(){
-  var beforeRaw=document.getElementById("before").value.trim();
-  var afterRaw=document.getElementById("after").value.trim();
-  var fontSize=parseInt(document.getElementById("fontSize").value)||32;
-  var fontColor=document.getElementById("fontColor").value;
-  var bgColor=document.getElementById("bgColor").value;
+      const lineHeight = fontSize * 1.4;
+      const offsetY = (288 - lineHeight * beforeArr.length) / 2 + fontSize;
 
-  var beforeArr=beforeRaw.length?beforeRaw.split(",").map(s=>s.trim()):[];
-  var afterArr=afterRaw.length?afterRaw.split(",").map(s=>s.trim()):[];
-  while(afterArr.length<beforeArr.length)afterArr.push(beforeArr[afterArr.length]);
+      const lines = [];
+      const styles = `
+      .dash { stroke-dasharray: 4 2; stroke: ${fontColor}; stroke-width: 1; }
+      .undashed { stroke: ${fontColor}; stroke-width: 1; }
+      .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
+      @keyframes blink { 50% { opacity: 0; } }
+      text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
+      `;
 
-  var W=672,H=288;
-  var lineGap=Math.round(fontSize*1.4);
-  var startY=Math.round(H/2-((beforeArr.length-1)/2)*lineGap);
+      beforeArr.forEach((kana, i) => {
+        const y = offsetY + i * lineHeight;
+        lines.push(`
+        <g id="line${i}" transform="translate(336, ${y})">
+          <text id="text${i}"></text>
+          <line id="underline${i}" y1="0" y2="0" x1="-100" x2="100" class="dash"/>
+        </g>`);
+      });
 
-  var svgParts=[];
-  svgParts.push('<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'">');
-  svgParts.push('<rect width="100%" height="100%" fill="'+bgColor+'"/>');
-  svgParts.push('<style>.txt{font-family:"Noto Sans JP","Segoe UI",sans-serif;font-size:'+fontSize+'px;fill:'+fontColor+';dominant-baseline:alphabetic;}.cursor{fill:'+fontColor+';animation:blink 1s steps(1) infinite;}.undashed{stroke:'+fontColor+';stroke-width:2;}.dash{stroke:'+fontColor+';stroke-width:2;stroke-dasharray:6 6;}@keyframes blink{50%{opacity:0}}</style>');
-  svgParts.push('<g id="container">');
-  for(var i=0;i<beforeArr.length;i++){
-    var y=startY+i*lineGap;
-    svgParts.push('<g id="line'+i+'" transform="translate(0,'+y+')">'+
-      '<text id="text'+i+'" class="txt" x="'+W/2+'" y="0" text-anchor="middle"></text>'+
-      '<line id="underline'+i+'" x1="0" x2="0" y1="'+Math.ceil(fontSize*0.6)+'" y2="'+Math.ceil(fontSize*0.6)+'" class="dash" />'+
-    '</g>');
-  }
-  svgParts.push('<rect id="cursor" width="2" height="'+fontSize+'" class="cursor" x="0" y="0" />');
-  svgParts.push('</g>');
-  svgParts.push('<script><![CDATA['+
-    '(function(){'+
-    'const before='+JSON.stringify(beforeArr)+';'+
-    'const after='+JSON.stringify(afterArr)+';'+
-    'const W='+W+';const fontSize='+fontSize+';const speed=120;const gap='+lineGap+';'+
-    'function textWidth(el,str){el.textContent=str;try{return el.getComputedTextLength();}catch(e){return str.length*fontSize*0.6;}}'+
-    'function placeCursorAt(textEl){var currentText=textEl.textContent||"";var w=textWidth(textEl,currentText);var startX=W/2-w/2;var cx=startX+w;var groupY=textEl.parentNode.transform.baseVal.getItem(0).matrix.f;cursor.setAttribute("x",cx);cursor.setAttribute("y",-Math.round(fontSize*0.8));}'+
-    'function setUnderline(lineIdx,textEl,dashed){var line=document.getElementById("underline"+lineIdx);var w=textWidth(textEl,textEl.textContent||"");var startX=W/2-w/2;line.setAttribute("x1",startX);line.setAttribute("x2",startX+w);line.setAttribute("class",dashed?"dash":"undashed");}'+
-    'let lineIndex=0,charIndex=0;const total=before.length;const cursor=document.getElementById("cursor");'+
-    'function step(){if(lineIndex>=total){cursor.style.display="none";return;}var t=document.getElementById("text"+lineIndex);var kana=before[lineIndex];var kanji=after[lineIndex];if(charIndex<=kana.length){t.textContent=kana.slice(0,charIndex);setUnderline(lineIndex,t,true);placeCursorAt(t);charIndex++;setTimeout(step,speed);}else{t.textContent=kanji;setUnderline(lineIndex,t,false);placeCursorAt(t);lineIndex++;charIndex=0;setTimeout(step,500);}}'+
-    'cursor.style.display="block";step();})();'+
-  ']]></script>');
-  svgParts.push('</svg>');
-  return svgParts.join("\n");
-}
+      const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288" viewBox="0 0 672 288">
+  <style>${styles}</style>
+  <rect width="100%" height="100%" fill="${bgColor}"/>
+  ${lines.join('\n')}
+  <rect id="cursor" width="2" height="${fontSize}" class="cursor" x="0" y="0"/>
+  <script><![CDATA[
+    const before = ${JSON.stringify(beforeArr)};
+    const after = ${JSON.stringify(afterArr)};
+    const speed = ${speed};
+    const cursor = document.getElementById('cursor');
 
-document.getElementById("generate").onclick=function(){
-  try{
-    var svg=generateSVG();
-    document.getElementById("preview").innerHTML=svg;
-    document.getElementById("svgCode").textContent=svg;
-  }catch(e){
-    document.getElementById("preview").innerHTML='<div style="color:#f88">生成エラー:'+esc(String(e))+'</div>';
-    console.error(e);
-  }
-};
+    async function typeLine(i) {
+      const textEl = document.getElementById('text'+i);
+      const underline = document.getElementById('underline'+i);
+      const kana = before[i];
+      const kanji = after[i];
+      let str = '';
+      for (let j = 0; j < kana.length; j++) {
+        str += kana[j];
+        textEl.textContent = str;
+        await new Promise(r => setTimeout(r, speed));
+        const len = textEl.getComputedTextLength();
+        textEl.setAttribute('x', 0);
+        cursor.setAttribute('x', len / 2);
+        cursor.setAttribute('y', -${fontSize}/2);
+      }
+      await new Promise(r => setTimeout(r, 400));
+      textEl.textContent = kanji;
+      const len = textEl.getComputedTextLength();
+      textEl.setAttribute('x', 0);
+      underline.setAttribute('x1', -len/2);
+      underline.setAttribute('x2', len/2);
+      underline.setAttribute('class', 'undashed');
+    }
 
-document.getElementById("copy").onclick=async function(){
-  var txt=document.getElementById("svgCode").textContent;
-  if(!txt){alert("先にSVGを生成してください");return;}
-  try{await navigator.clipboard.writeText(txt);alert("SVGコードをコピーしました");}
-  catch(e){alert("コピー失敗:"+e);}
-};
+    async function animate() {
+      for (let i = 0; i < before.length; i++) {
+        await typeLine(i);
+      }
+      cursor.remove();
+    }
 
-document.getElementById("download").onclick=function(){
-  var txt=document.getElementById("svgCode").textContent;
-  if(!txt){alert("先にSVGを生成してください");return;}
-  var blob=new Blob([txt],{type:"image/svg+xml"});
-  var url=URL.createObjectURL(blob);
-  var a=document.createElement("a");
-  a.href=url;a.download="typing.svg";a.click();
-  URL.revokeObjectURL(url);
-};
-</script>
+    animate();
+  ]]></script>
+</svg>`;
+
+      document.getElementById('preview').innerHTML = svg;
+      document.getElementById('svgCode').value = svg;
+    }
+
+    function copyCode() {
+      const code = document.getElementById('svgCode').value;
+      navigator.clipboard.writeText(code).then(() => alert('コピーしました'));
+    }
+
+    function downloadSVG() {
+      const code = document.getElementById('svgCode').value;
+      const blob = new Blob([code], { type: 'image/svg+xml' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'typing.svg';
+      a.click();
+    }
+  </script>
 </body>
 </html>
