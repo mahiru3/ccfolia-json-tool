@@ -33,7 +33,7 @@ function generateSVG() {
   const speed = parseInt(document.getElementById('speed').value, 10);
 
   const lineHeight = fontSize * 1.4;
-  const underlineY = fontSize * 0.6;
+  const underlineY = fontSize * 0.85; // ← 下線が文字の真下に来る
   const charsPerLine = 16;
   const charWidth = fontSize * 0.6;
 
@@ -47,21 +47,20 @@ function generateSVG() {
       font-size: ${fontSize}px;
       fill: ${fontColor};
       text-anchor: start;
-      dominant-baseline: alphabetic; /* ← 文字のベースライン基準に変更 */
+      dominant-baseline: alphabetic; /* ← ベースライン基準に修正 */
     }
   `;
-
 
   let y = fontSize;
   const lines = [];
 
   inputData.forEach((item, i) => {
-    // 左揃え開始位置（左端基準）
-    const x = (item.start - 1) * charWidth + 20; // 左に少し余白
+    // 左端から開始位置分ずらす
+    const x = (item.start - 1) * charWidth + 20; // 左に余白20px
     lines.push(`
       <g id="line${i}" transform="translate(${x}, ${y})">
-        <text id="text${i}" x="0"></text>
-        <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="0" x2="200" class="dash"/>
+        <text id="text${i}" x="0" y="0"></text>
+        <line id="underline${i}" y1="${underlineY}" y2="${underlineY}" x1="0" x2="0" class="dash"/>
       </g>`);
     if (item.break) y += lineHeight;
   });
@@ -84,7 +83,7 @@ function generateSVG() {
         await new Promise(r => setTimeout(r, speed));
         const len = textEl.getComputedTextLength();
         cursor.setAttribute('x', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0]) + len);
-        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize / 2);
+        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize * 0.8);
         underline.setAttribute('x2', len);
       }
       await new Promise(r => setTimeout(r, 400));
