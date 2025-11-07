@@ -11,25 +11,23 @@
   <h1>Typing SVG Generator</h1>
 
   <table id="inputTable">
-    <thead>
-      <tr>
-        <th>変化前（かな）</th>
-        <th>変化後（漢字）</th>
-        <th>改行</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><input type="text" class="before" value="れいとなる"></td>
-        <td><input type="text" class="after" value="例となる"></td>
-        <td><input type="checkbox" class="break" checked></td>
-      </tr>
-      <tr>
-        <td><input type="text" class="before" value="ぶんしょう"></td>
-        <td><input type="text" class="after" value="文章"></td>
-        <td><input type="checkbox" class="break"></td>
-      </tr>
-    </tbody>
+<thead>
+  <tr>
+    <th>変化前（かな）</th>
+    <th>変化後（漢字）</th>
+    <th>改行</th>
+    <th>開始位置</th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td><input type="text" class="before" value="れいとなる"></td>
+    <td><input type="text" class="after" value="例となる"></td>
+    <td><input type="checkbox" class="break"></td>
+    <td><input type="number" class="start" value="1" min="1" max="16"></td>
+  </tr>
+</tbody>
+
   </table>
   <button onclick="addRow()">行を追加</button>
 
