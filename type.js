@@ -4,8 +4,8 @@ function addRow() {
   row.innerHTML = `
     <td><input type="text" class="before"></td>
     <td><input type="text" class="after"></td>
-    <td><input type="checkbox" class="break" checked></td>
-    <td><input type="number" class="start" value="1" min="1" max="16"></td>
+    <td><input type="checkbox" class="break"></td>
+    <td><input type="number" class="start" value="1" min="1"></td>
   `;
   tbody.appendChild(row);
 }
@@ -17,8 +17,8 @@ function getInputData() {
     const before = row.querySelector('.before').value.trim();
     const after = row.querySelector('.after').value.trim();
     const breakLine = row.querySelector('.break').checked;
-    const start = parseInt(row.querySelector('.start').value || '1', 10);
-    if (before) {
+    const start = parseInt(row.querySelector('.start').value, 10) || 1;
+    if (before || after) {
       result.push({ before, after: after || before, break: breakLine, start });
     }
   });
@@ -32,10 +32,9 @@ function generateSVG() {
   const bgColor = document.getElementById('bgColor').value;
   const speed = parseInt(document.getElementById('speed').value, 10);
 
-  const lineHeight = fontSize * 1.4;
-  const underlineY = fontSize * 0.85; // ← 下線が文字の真下に来る
-  const charsPerLine = 16;
-  const charWidth = fontSize * 0.6;
+  const lineHeight = fontSize * 1.6;
+  const underlineY = fontSize * 0.85;
+  const charWidth = fontSize * 0.6; // 1文字幅の目安
 
   const styles = `
     .dash { stroke-dasharray: 4 2; stroke: ${fontColor}; stroke-width: 1; }
@@ -47,16 +46,15 @@ function generateSVG() {
       font-size: ${fontSize}px;
       fill: ${fontColor};
       text-anchor: start;
-      dominant-baseline: alphabetic; /* ← ベースライン基準に修正 */
+      dominant-baseline: alphabetic;
     }
   `;
 
-  let y = fontSize;
   const lines = [];
+  let y = fontSize * 1.5;
 
   inputData.forEach((item, i) => {
-    // 左端から開始位置分ずらす
-    const x = (item.start - 1) * charWidth + 20; // 左に余白20px
+    const x = (item.start - 1) * charWidth + 20; // 左端＋開始位置
     lines.push(`
       <g id="line${i}" transform="translate(${x}, ${y})">
         <text id="text${i}" x="0" y="0"></text>
@@ -69,24 +67,28 @@ function generateSVG() {
     const inputData = ${JSON.stringify(inputData)};
     const speed = ${speed};
     const fontSize = ${fontSize};
+    const underlineY = ${underlineY};
     const cursor = document.getElementById('cursor');
 
     async function typeLine(i) {
-      const textEl = document.getElementById('text'+i);
-      const underline = document.getElementById('underline'+i);
+      const textEl = document.getElementById('text' + i);
+      const underline = document.getElementById('underline' + i);
       const kana = inputData[i].before;
       const kanji = inputData[i].after;
       let str = '';
+
       for (let j = 0; j < kana.length; j++) {
         str += kana[j];
         textEl.textContent = str;
         await new Promise(r => setTimeout(r, speed));
+
         const len = textEl.getComputedTextLength();
         cursor.setAttribute('x', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[0]) + len);
-        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize * 0.8);
+        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - fontSize);
         underline.setAttribute('x2', len);
       }
-      await new Promise(r => setTimeout(r, 400));
+
+      await new Promise(r => setTimeout(r, 300));
       textEl.textContent = kanji;
       const len = textEl.getComputedTextLength();
       underline.setAttribute('x2', len);
@@ -96,6 +98,10 @@ function generateSVG() {
     async function animate() {
       for (let i = 0; i < inputData.length; i++) {
         await typeLine(i);
+        // ✅ 次の行が始まる直前に下線を消す
+        const underline = document.getElementById('underline' + i);
+        await new Promise(r => setTimeout(r, 300));
+        underline.setAttribute('visibility', 'hidden');
       }
       cursor.remove();
     }
@@ -104,7 +110,7 @@ function generateSVG() {
   `.replace(/<\/script>/gi, '<\\/script>');
 
   const svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288" viewBox="0 0 672 288">
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">
   <style>${styles}</style>
   <rect width="100%" height="100%" fill="${bgColor}"/>
   ${lines.join('\n')}
@@ -121,26 +127,24 @@ function generateSVG() {
   const object = document.createElement('object');
   object.type = 'image/svg+xml';
   object.data = url;
-  object.width = 672;
-  object.height = 288;
+  object.width = 800;
+  object.height = 400;
 
   preview.appendChild(object);
   document.getElementById('svgCode').value = svg;
 }
 
 function copyCode() {
-  const code = document.getElementById('svgCode').value;
-  navigator.clipboard.writeText(code);
-  alert('SVGコードをコピーしました！');
+  const text = document.getElementById('svgCode').value;
+  navigator.clipboard.writeText(text);
+  alert('SVGコードをコピーしました');
 }
 
 function downloadSVG() {
-  const svg = document.getElementById('svgCode').value;
-  const blob = new Blob([svg], { type: 'image/svg+xml' });
-  const url = URL.createObjectURL(blob);
+  const text = document.getElementById('svgCode').value;
+  const blob = new Blob([text], { type: 'image/svg+xml' });
   const a = document.createElement('a');
-  a.href = url;
+  a.href = URL.createObjectURL(blob);
   a.download = 'typing.svg';
   a.click();
-  URL.revokeObjectURL(url);
 }
