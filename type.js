@@ -42,8 +42,15 @@ function generateSVG() {
     .undashed { stroke: ${fontColor}; stroke-width: 1; }
     .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
     @keyframes blink { 50% { opacity: 0; } }
-    text { font-family: 'Noto Sans JP', sans-serif; font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: start; }
+    text {
+      font-family: 'Noto Sans JP', sans-serif;
+      font-size: ${fontSize}px;
+      fill: ${fontColor};
+      text-anchor: start;
+      dominant-baseline: alphabetic; /* ← 文字のベースライン基準に変更 */
+    }
   `;
+
 
   let y = fontSize;
   const lines = [];
