@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=672, height=288">
+<title>Typing SVG Generator</title>
+<style>
+  body {
+    font-family: "Noto Sans JP", sans-serif;
+    background: #222;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 10px;
+  }
+  textarea, input {
+    width: 90%;
+    margin: 4px 0;
+    padding: 6px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+  .output {
+    width: 672px;
+    height: 288px;
+    border: 1px solid #555;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  pre {
+    background: #111;
+    color: #0f0;
+    padding: 10px;
+    width: 90%;
+    overflow-x: auto;
+  }
+  button {
+    background: #0080ff;
+    color: #fff;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+  <h2>Typing SVG Generator</h2>
+  <label>変化前の文章（かななど）</label>
+  <textarea id="textBefore" rows="3">れいとなる\nぶんしょう</textarea>
+
+  <label>変化後の文章（漢字など）</label>
+  <textarea id="textAfter" rows="3">例となる\n文章</textarea>
+
+  <label>文字サイズ</label>
+  <input type="number" id="fontSize" value="32">
+
+  <label>文字色</label>
+  <input type="color" id="fontColor" value="#000000">
+
+  <label>背景色</label>
+  <input type="color" id="bgColor" value="#ffffff">
+
+  <button id="generate">SVGを生成</button>
+
+  <div class="output" id="preview">SVGプレビュー</div>
+
+  <h3>SVGコード</h3>
+  <pre id="svgCode"></pre>
+
+<script>
+document.getElementById("generate").onclick = function() {
+  const before = document.getElementById("textBefore").value.split("\n");
+  const after = document.getElementById("textAfter").value.split("\n");
+  const fontSize = document.getElementById("fontSize").value;
+  const fontColor = document.getElementById("fontColor").value;
+  const bgColor = document.getElementById("bgColor").value;
+
+  let svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288" viewBox="0 0 672 288">
+<style>
+  text {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: ${fontSize}px;
+    fill: ${fontColor};
+  }
+  .dashed { text-decoration: underline dashed ${fontColor}; }
+  .solid { text-decoration: underline solid ${fontColor}; }
+  .cursor { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+<rect width="100%" height="100%" fill="${bgColor}"/>
+<g id="typing"></g>
+<script><![CDATA[
+  const beforeLines = ${JSON.stringify(before)};
+  const afterLines = ${JSON.stringify(after)};
+  const g = document.getElementById('typing');
+  const lineHeight = ${fontSize} * 1.5;
+  const speed = 150;
+  let line = 0, i = 0, phase = 0;
+  const cursor = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  cursor.setAttribute('width', 2);
+  cursor.setAttribute('height', ${fontSize});
+  cursor.setAttribute('fill', '${fontColor}');
+  cursor.setAttribute('class', 'cursor');
+  g.appendChild(cursor);
+  
+  const textEl = document.createElementNS('http://www.w3.org/2000/svg','text');
+  textEl.setAttribute('x', 20);
+  textEl.setAttribute('y', 60);
+  textEl.setAttribute('class', 'dashed');
+  g.appendChild(textEl);
+
+  function nextChar() {
+    if (line >= beforeLines.length) return;
+    const kana = beforeLines[line];
+    const kanji = afterLines[line] || '';
+    if (phase === 0 && i <= kana.length) {
+      textEl.textContent = kana.slice(0, i);
+      cursor.setAttribute('x', 20 + i * ${fontSize} * 0.6);
+      cursor.setAttribute('y', 60 + lineHeight * line - ${fontSize});
+      i++;
+      setTimeout(nextChar, speed);
+    } else if (phase === 0 && i > kana.length) {
+      textEl.setAttribute('class', 'solid');
+      textEl.textContent = kanji;
+      phase = 1;
+      i = 0;
+      line++;
+      if (line < beforeLines.length) {
+        setTimeout(() => {
+          const newText = textEl.cloneNode();
+          newText.setAttribute('y', 60 + lineHeight * line);
+          newText.setAttribute('class', 'dashed');
+          g.appendChild(newText);
+          textEl.replaceWith(newText);
+          cursor.setAttribute('y', 60 + lineHeight * line - ${fontSize});
+          setTimeout(nextChar, 800);
+        }, 500);
+      }
+    }
+  }
+  nextChar();
+]]></script>
+</svg>`;
+
+  document.getElementById("preview").innerHTML = svg;
+  document.getElementById("svgCode").textContent = svg;
+};
+</script>
+</body>
+</html>
