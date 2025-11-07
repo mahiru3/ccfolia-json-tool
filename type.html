@@ -1,148 +1,258 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=672, height=288">
-<title>SVG文章アニメツール</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=672, height=288" />
+<title>Typing SVG Generator (Kana→Kanji)</title>
 <style>
-  body {
-    background-color: #1e1e1e;
-    color: #fff;
-    font-family: "Segoe UI", sans-serif;
-    text-align: center;
-    padding: 20px;
+  :root { --w:672px; --h:288px; }
+  body{
+    background:#111;
+    color:#eee;
+    font-family: "Noto Sans JP", "Segoe UI", sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    padding:18px;
   }
-  textarea, input, button {
-    margin: 8px;
-    padding: 6px;
-    border-radius: 6px;
-    border: none;
-    font-size: 16px;
-  }
-  textarea, input {
-    width: 90%;
-    max-width: 600px;
-  }
-  .color-row {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 12px;
+  textarea,input{ width:90%; max-width:720px; padding:8px; border-radius:6px; border:1px solid #444; background:#222; color:#eee; }
+  label{ font-weight:700; margin-top:6px; display:block; }
+  .row { display:flex; gap:12px; align-items:center; justify-content:center; }
+  .color-row { display:flex; gap:14px; align-items:center; }
+  button{
+    background:#0a84ff; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;
   }
   #preview {
-    width: 672px;
-    height: 288px;
-    background-color: white;
-    margin: 20px auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    width:var(--w); height:var(--h);
+    border:1px solid #444; background:#fff; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 6px 18px rgba(0,0,0,0.6);
   }
-  .button-row {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 10px;
-  }
-  pre {
-    background: #111;
-    color: #0f0;
-    padding: 10px;
-    width: 90%;
-    max-width: 640px;
-    overflow-x: auto;
-    margin: 10px auto;
-  }
+  pre{ width:90%; max-width:720px; background:#0b0b0b; color:#b8f2c2; padding:10px; overflow:auto; border-radius:6px; border:1px solid #222; }
+  .controls { display:flex; gap:8px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .small { font-size:0.9rem; color:#ccc; }
 </style>
 </head>
 <body>
-  <h2>SVG文章アニメーションツール</h2>
-  <textarea id="inputText" rows="2" placeholder="例: れいとなる,ぶんしょう"></textarea>
-  <h3>文字サイズ</h3>
-  <input type="number" id="fontSize" value="32">
-  
+  <h2>SVG 文章タイピングジェネレータ</h2>
+
+  <label>変化前（かな） — カンマで区切る（例: れいとなる,ぶんしょう）</label>
+  <textarea id="before" rows="2">れいとなる,ぶんしょう</textarea>
+
+  <label>変化後（漢字） — 同じ数の要素にしてください（例: 例となる,文章）</label>
+  <textarea id="after" rows="2">例となる,文章</textarea>
+
+  <label>文字サイズ</label>
+  <input id="fontSize" type="number" value="32" min="8" max="120" />
+
   <div class="color-row">
-    <label>文字色</label>
-    <input type="color" id="textColor" value="#000000">
-    <label>背景色</label>
-    <input type="color" id="bgColor" value="#ffffff">
+    <div><label class="small">文字色</label><input id="fontColor" type="color" value="#000000" /></div>
+    <div><label class="small">背景色</label><input id="bgColor" type="color" value="#ffffff" /></div>
   </div>
 
-  <div class="button-row">
+  <div class="controls">
     <button id="generate">SVGを生成</button>
-    <button id="copyCode">コードをコピー</button>
-    <button id="saveFile">保存</button>
+    <button id="copy">コードをコピー</button>
+    <button id="download">SVGを保存</button>
   </div>
 
-  <div id="preview"></div>
+  <div id="preview">プレビュー（ここにSVGが表示されます）</div>
 
-  <h3>SVGコード</h3>
+  <h3>SVGコード（下のボタンでコピーまたは保存できます）</h3>
   <pre id="svgCode"></pre>
 
 <script>
-document.getElementById("generate").onclick = function() {
-  const input = document.getElementById("inputText").value.trim();
-  const phrases = input.split(",");
-  const fontSize = parseInt(document.getElementById("fontSize").value);
-  const textColor = document.getElementById("textColor").value;
-  const bgColor = document.getElementById("bgColor").value;
+// Helper: escape for embedding strings
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
-  let svg = `
-<svg xmlns="http://www.w3.org/2000/svg" width="672" height="288">
-  <rect width="100%" height="100%" fill="${bgColor}"/>
-  <style>
-    text {
-      font-size: ${fontSize}px;
-      fill: ${textColor};
-      font-family: 'Noto Sans JP', sans-serif;
-      dominant-baseline: middle;
-      text-anchor: middle;
-    }
-    .cursor {
-      animation: blink 1s step-end infinite;
-    }
-    @keyframes blink {
-      50% { opacity: 0; }
-    }
-  </style>
-`;
+function generateSVG(){
+  const beforeRaw = document.getElementById('before').value.trim();
+  const afterRaw = document.getElementById('after').value.trim();
+  const fontSize = parseInt(document.getElementById('fontSize').value) || 32;
+  const fontColor = document.getElementById('fontColor').value;
+  const bgColor = document.getElementById('bgColor').value;
 
-  let y = 144;
-  let x = 336;
-  let dy = -fontSize * (phrases.length - 1) / 2;
+  // split by comma, trim each
+  const beforeArr = beforeRaw.length ? beforeRaw.split(',').map(s=>s.trim()) : [];
+  const afterArr = afterRaw.length ? afterRaw.split(',').map(s=>s.trim()) : [];
 
-  phrases.forEach((phrase, index) => {
-    svg += `
-    <text x="${x}" y="${y + dy + index * fontSize * 1.4}">
-      <tspan>${phrase}</tspan>
-      <tspan class="cursor">|</tspan>
-    </text>`;
-  });
+  // ensure same length by padding afterArr with beforeArr if missing
+  while(afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
 
-  svg += `</svg>`;
+  const W = 672, H = 288;
+  const lineGap = Math.round(fontSize * 1.4);
+  const startY = Math.round(H/2 - ((beforeArr.length-1)/2) * lineGap);
 
-  document.getElementById("preview").innerHTML = svg;
-  document.getElementById("svgCode").textContent = svg;
-};
+  // Build SVG string. We'll include an embedded script that runs the typing animation inside the SVG.
+  // The embedded script will create text nodes, underline lines, cursor, and animate per-character.
+  const svgParts = [];
 
-// コードをコピー
-document.getElementById("copyCode").onclick = function() {
-  const code = document.getElementById("svgCode").textContent;
-  navigator.clipboard.writeText(code);
-  alert("SVGコードをコピーしました！");
-};
+  svgParts.push(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`);
+  svgParts.push(`<rect width="100%" height="100%" fill="${bgColor}"/>`);
+  svgParts.push(`<style>
+    .txt { font-family: 'Noto Sans JP', 'Segoe UI', sans-serif; font-size:${fontSize}px; fill:${fontColor}; dominant-baseline:alphabetic; }
+    .cursor { fill:${fontColor}; animation:blink 1s steps(1) infinite; }
+    .undashed { stroke:${fontColor}; stroke-width:2; stroke-dasharray:0; }
+    .dash { stroke:${fontColor}; stroke-width:2; stroke-dasharray:6 6; }
+    @keyframes blink { 50% { opacity:0 } }
+  </style>`);
 
-// ファイル保存
-document.getElementById("saveFile").onclick = function() {
-  const svg = document.getElementById("svgCode").textContent;
-  const blob = new Blob([svg], { type: "image/svg+xml" });
+  // container groups for each line
+  svgParts.push(`<g id="container">`);
+  for(let i=0;i<beforeArr.length;i++){
+    const y = startY + i*lineGap;
+    // group per line with placeholders
+    svgParts.push(`<g id="line${i}" transform="translate(0, ${y})">
+      <text id="text${i}" class="txt" x="${W/2}" y="0" text-anchor="middle"></text>
+      <line id="underline${i}" x1="0" x2="0" y1="${Math.ceil(fontSize*0.6)}" y2="${Math.ceil(fontSize*0.6)}" class="dash" />
+    </g>`);
+  }
+  // create cursor as a rect; it will be moved during typing
+  svgParts.push(`<rect id="cursor" width="2" height="${fontSize}" class="cursor" x="0" y="0" />`);
+  svgParts.push(`</g>`);
+
+  // embed script (CDATA)
+  svgParts.push(`<script><![CDATA[
+    (function(){
+      const before = ${JSON.stringify(beforeArr)};
+      const after = ${JSON.stringify(afterArr)};
+      const W = ${W};
+      const fontSize = ${fontSize};
+      const speed = 120; // ms per char, can be adjusted or exposed in UI
+      const gap = ${lineGap};
+
+      // helpers to measure text length inside svg
+      function textWidth(el, str){
+        el.textContent = str;
+        try { return el.getComputedTextLength(); } catch(e) { return str.length * fontSize * 0.6; }
+      }
+
+      // initial state
+      let lineIndex = 0;
+      let charIndex = 0;
+      let phase = 0; // 0 typing kana, 1 commit & transform, 2 next line typing...
+      const totalLines = before.length;
+      const cursor = document.getElementById('cursor');
+
+      function placeCursorAt(textEl){
+        // center anchor -> we need to compute start x = W/2 - textWidth/2, then cursor x = start + textWidth(current)
+        const currentText = textEl.textContent || '';
+        const w = textWidth(textEl, currentText);
+        const startX = W/2 - w/2;
+        const cx = startX + w;
+        const groupY = textEl.parentNode.transform.baseVal.getItem(0).matrix.f; // translate y
+        textEl.setAttribute('y', 0); // ensure baseline
+        cursor.setAttribute('x', cx);
+        cursor.setAttribute('y', -Math.round(fontSize*0.8)); // align rect to text baseline roughly
+      }
+
+      function setUnderlineToText(lineIdx, textEl, dashed){
+        const line = document.getElementById('underline'+lineIdx);
+        // measure width and position
+        const w = textWidth(textEl, textEl.textContent || '');
+        const startX = W/2 - w/2;
+        line.setAttribute('x1', startX);
+        line.setAttribute('x2', startX + w);
+        // set class
+        if(dashed) { line.setAttribute('class','dash'); } else { line.setAttribute('class','undashed'); }
+      }
+
+      function typeStep(){
+        if(lineIndex >= totalLines){ // finished all
+          cursor.style.display = 'none';
+          return;
+        }
+        const textEl = document.getElementById('text'+lineIndex);
+        const kana = before[lineIndex] || '';
+        const kanji = after[lineIndex] || kana;
+
+        if(charIndex <= kana.length){
+          // phase: typing kana
+          textEl.textContent = kana.slice(0,charIndex);
+          setUnderlineToText(lineIndex, textEl, true);
+          placeCursorAt(textEl);
+          charIndex++;
+          setTimeout(typeStep, speed);
+        } else {
+          // commit => show kanji and switch to solid underline
+          textEl.textContent = kanji;
+          setUnderlineToText(lineIndex, textEl, false);
+          placeCursorAt(textEl);
+          // small pause, then move to next line
+          lineIndex++;
+          charIndex = 0;
+          setTimeout(typeStep, 500);
+        }
+      }
+
+      // initialize empty text for all lines to ensure measurement works
+      for(let i=0;i<totalLines;i++){
+        const te = document.getElementById('text'+i);
+        te.textContent = '';
+        setUnderlineToText(i, te, true);
+      }
+
+      // start typing at first line
+      // position cursor initially near left of center
+      cursor.setAttribute('x', W/2);
+      cursor.setAttribute('y', -Math.round(fontSize*0.8));
+      cursor.style.display = 'block';
+      typeStep();
+    })();
+  ]]></script>`);
+
+  svgParts.push(`</svg>`);
+
+  return svgParts.join('\n');
+}
+
+// UI wiring
+const genBtn = document.getElementById('generate');
+const preview = document.getElementById('preview');
+const code = document.getElementById('svgCode');
+const copyBtn = document.getElementById('copy');
+const dlBtn = document.getElementById('download');
+
+genBtn.addEventListener('click', ()=>{
+  try {
+    const svg = generateSVG();
+    // show live SVG in preview (as HTML)
+    preview.innerHTML = svg;
+    // show code (escaped)
+    code.textContent = svg;
+  } catch(e){
+    preview.innerHTML = '<div style="color:#f88">生成エラー: '+esc(String(e))+'</div>';
+    code.textContent = '';
+    console.error(e);
+  }
+});
+
+// copy
+copyBtn.addEventListener('click', async ()=>{
+  const txt = code.textContent;
+  if(!txt) { alert('先にSVGを生成してください'); return; }
+  try {
+    await navigator.clipboard.writeText(txt);
+    alert('SVGコードをクリップボードにコピーしました');
+  } catch(e){
+    alert('コピーに失敗しました: '+e);
+  }
+});
+
+// download
+dlBtn.addEventListener('click', ()=>{
+  const txt = code.textContent;
+  if(!txt) { alert('先にSVGを生成してください'); return; }
+  const blob = new Blob([txt], {type:'image/svg+xml'});
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
-  a.download = "animation.svg";
+  a.download = 'typing.svg';
+  document.body.appendChild(a);
   a.click();
+  a.remove();
   URL.revokeObjectURL(url);
-};
+});
 </script>
 </body>
 </html>
