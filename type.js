@@ -115,5 +115,8 @@ function generateSVG() {
   object.width = 672;
   object.height = 288;
 
-  preview.appendChild(object);
-  document.getElementById('svgCode').value
+    preview.appendChild(object);
+
+  // SVGコードをテキストエリアに出力（コピーボタン用）
+  document.getElementById('svgCode').value = svg;
+}
