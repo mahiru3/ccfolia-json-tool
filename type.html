@@ -60,7 +60,7 @@ Usage:
   <label for="after">変化後（漢字）</label>
   <textarea id="after" rows="2" placeholder="例となる,文章" aria-label="変化後（漢字）"></textarea>
 
-  <label for="fontSize">文字サイズ（px）</label>
+  <label for="fontSize">文字サイズ！！（px）</label>
   <input type="number" id="fontSize" value="32" min="8" max="100" aria-label="文字サイズ">
 
   <label for="fontColor">文字色</label>
@@ -74,53 +74,52 @@ Usage:
 
   <div>
     <button onclick="generateSVG()" aria-label="SVGを生成">SVGを生成</button>
-    <button onclick="copyCode()" aria-label="コードをコピー">コードをコピー1</button>
+    <button onclick="copyCode()" aria-label="コードをコピー">コードをコピー</button>
     <button onclick="downloadSVG()" aria-label="SVGを保存">SVGを保存</button>
   </div>
 
   <div id="preview"></div>
   <textarea id="svgCode" readonly></textarea>
+<script>
+  function escapeXML(str) {
+    return str.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  }
 
-  <script>
-    function escapeXML(str) {
-      return str.replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-    }
+  function generateSVG() {
+    const before = document.getElementById('before').value.trim();
+    if (!before) return alert('変化前を入力してください');
+    const after = document.getElementById('after').value.trim();
+    const fontSize = parseInt(document.getElementById('fontSize').value, 10);
+    const fontColor = document.getElementById('fontColor').value;
+    const bgColor = document.getElementById('bgColor').value;
+    const speed = parseInt(document.getElementById('speed').value, 10);
 
-    function generateSVG() {
-      const before = document.getElementById('before').value.trim();
-      if (!before) return alert('変化前を入力してください');
-      const after = document.getElementById('after').value.trim();
-      const fontSize = parseInt(document.getElementById('fontSize').value, 10);
-      const fontColor = document.getElementById('fontColor').value;
-      const bgColor = document.getElementById('bgColor').value;
-      const speed = parseInt(document.getElementById('speed').value, 10);
+    const beforeArr = before.split(',').map(s => s.trim());
+    let afterArr = after ? after.split(',').map(s => s.trim()) : [];
+    while (afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
 
-      const beforeArr = before.split(',').map(s => s.trim());
-      let afterArr = after ? after.split(',').map(s => s.trim()) : [];
-      while (afterArr.length < beforeArr.length) afterArr.push(beforeArr[afterArr.length]);
+    const lineHeight = fontSize * 1.4;
+    const offsetY = (288 - lineHeight * beforeArr.length) / 2 + fontSize;
 
-      const lineHeight = fontSize * 1.4;
-      const offsetY = (288 - lineHeight * beforeArr.length) / 2 + fontSize;
-
-      const lines = [];
-      const styles = `
+    const lines = [];
+    const styles = `
       .dash { stroke-dasharray: 4 2; stroke: ${fontColor}; stroke-width: 1; }
       .undashed { stroke: ${fontColor}; stroke-width: 1; }
       .cursor { fill: ${fontColor}; animation: blink 1s step-start infinite; }
       @keyframes blink { 50% { opacity: 0; } }
       text { font-size: ${fontSize}px; fill: ${fontColor}; dominant-baseline: middle; text-anchor: middle; }
-      `;
+    `;
 
-      beforeArr.forEach((kana, i) => {
-        const y = offsetY + i * lineHeight;
-        lines.push(`
+    beforeArr.forEach((kana, i) => {
+      const y = offsetY + i * lineHeight;
+      lines.push(`
         <g id="line${i}" transform="translate(336, ${y})">
           <text id="text${i}"></text>
           <line id="underline${i}" y1="0" y2="0" x1="-100" x2="100" class="dash"/>
         </g>`);
-      });
+    });
 
-      const svg = `
+    const svg = `
 <svg xmlns="http://www.w3.org/2000/svg" width="672" height="288" viewBox="0 0 672 288">
   <style>${styles}</style>
   <rect width="100%" height="100%" fill="${bgColor}"/>
@@ -145,7 +144,7 @@ Usage:
         const len = textEl.getComputedTextLength();
         textEl.setAttribute('x', 0);
         cursor.setAttribute('x', 336 + len / 2);
-        cursor.setAttribute('y', textEl.getAttribute('y') || 0);
+        cursor.setAttribute('y', parseFloat(textEl.parentNode.getAttribute('transform').split(',')[1]) - ${fontSize}/2);
       }
       await new Promise(r => setTimeout(r, 400));
       textEl.textContent = kanji;
@@ -167,23 +166,23 @@ Usage:
   ]]></script>
 </svg>`;
 
-      document.getElementById('preview').innerHTML = svg;
-      document.getElementById('svgCode').value = svg;
-    }
+    document.getElementById('preview').innerHTML = svg;
+    document.getElementById('svgCode').value = svg;
+  }
 
-    function copyCode() {
-      const code = document.getElementById('svgCode').value;
-      navigator.clipboard.writeText(code).then(() => alert('コピーしました'));
-    }
+  function copyCode() {
+    const code = document.getElementById('svgCode').value;
+    navigator.clipboard.writeText(code).then(() => alert('コピーしました'));
+  }
 
-    function downloadSVG() {
-      const code = document.getElementById('svgCode').value;
-      const blob = new Blob([code], { type: 'image/svg+xml' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'typing.svg';
-      a.click();
-    }
-  </script>
+  function downloadSVG() {
+    const code = document.getElementById('svgCode').value;
+    const blob = new Blob([code], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'typing.svg';
+    a.click();
+  }
+</script>
 </body>
 </html>
