@@ -149,22 +149,13 @@ function downloadSVG() {
 }
 
 async function generateAPNG() {
-  const object = document.querySelector('#preview object');
-  if (!object) {
+  const svgText = document.getElementById('svgCode').value;
+  if (!svgText) {
     alert('まずSVGを生成してください。');
     return;
   }
 
-  // ライブラリ読込（初回のみ）
-  if (!window.html2canvas) {
-    await new Promise((resolve, reject) => {
-      const s = document.createElement("script");
-      s.src = "https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js";
-      s.onload = resolve;
-      s.onerror = reject;
-      document.body.appendChild(s);
-    });
-  }
+  // 必要ライブラリを動的ロード
   if (!window.UPNG) {
     await new Promise((resolve, reject) => {
       const s = document.createElement("script");
@@ -175,17 +166,26 @@ async function generateAPNG() {
     });
   }
 
+  // SVG → <img> に変換して描画可能にする
+  const img = new Image();
+  const blob = new Blob([svgText], { type: "image/svg+xml" });
+  const url = URL.createObjectURL(blob);
+  img.src = url;
+  await img.decode();
+
+  // Canvas準備
+  const canvas = document.createElement("canvas");
+  canvas.width = img.width || 800;
+  canvas.height = img.height || 400;
+  const ctx = canvas.getContext("2d");
+
   const frames = [];
-  const frameDelay = 100;
-  const totalDuration = 5000;
-  const totalFrames = Math.floor(totalDuration / frameDelay);
+  const frameDelay = 100; // ms
+  const totalFrames = 50; // 例：5秒(=100ms×50)
 
   for (let i = 0; i < totalFrames; i++) {
-    const canvas = await html2canvas(object, {
-      backgroundColor: null,
-      scale: 1,
-      useCORS: true,
-    });
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
     const blob = await new Promise(r => canvas.toBlob(r, "image/png"));
     const arrayBuffer = await blob.arrayBuffer();
     frames.push(new Uint8Array(arrayBuffer));
@@ -193,12 +193,13 @@ async function generateAPNG() {
   }
 
   const delays = new Array(frames.length).fill(frameDelay);
-  const apng = UPNG.encode(frames, frames[0].width, frames[0].height, 0, delays);
+  const apng = UPNG.encode(frames, canvas.width, canvas.height, 0, delays);
   const apngBlob = new Blob([apng], { type: "image/png" });
-  const url = URL.createObjectURL(apngBlob);
+  const apngUrl = URL.createObjectURL(apngBlob);
+
   const a = document.createElement("a");
-  a.href = url;
+  a.href = apngUrl;
   a.download = "typing.apng";
   a.click();
-  URL.revokeObjectURL(url);
+  URL.revokeObjectURL(apngUrl);
 }
