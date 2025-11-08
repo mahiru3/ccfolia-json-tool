@@ -1,67 +1,62 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Typing SVG Generator (CoFolia対応)</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=720">
+  <title>Typing SVG Generator (SMIL版)</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Noto Sans JP', sans-serif; max-width: 900px; margin: 20px auto; background: #f8f9fa; color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1em; }
+    body { font-family: 'Noto Sans JP', sans-serif; background: #f5f5f5; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
     th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    input[type="text"], input[type="number"], input[type="color"], select { width: 100%; }
+    input[type="text"], input[type="number"], input[type="color"] { width: 90%; }
+    h1 { font-size: 20px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
     button { margin: 4px; padding: 6px 12px; }
-    textarea { width: 100%; height: 180px; }
-    #preview { border: 1px solid #ccc; background: #fff; margin-top: 10px; text-align: center; }
+    #preview { border: 1px solid #ccc; margin-top: 10px; background: white; }
+    textarea { width: 100%; height: 240px; margin-top: 8px; }
   </style>
 </head>
 <body>
-  <h1>Typing SVG Generator（CoFolia対応）</h1>
+  <h1>Typing SVG Generator（SMIL対応）</h1>
 
   <table id="inputTable">
     <thead>
       <tr>
         <th>へんかまえ（かな）</th>
         <th>変化後（漢字）</th>
-        <th>改行</th>
-        <th>X</th>
-        <th>Y</th>
+        <th>X座標</th>
+        <th>Y座標</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td><input type="text" class="before" value="れいとなる"></td>
         <td><input type="text" class="after" value="例となる"></td>
-        <td><input type="checkbox" class="break"></td>
-        <td><input type="number" class="x" value="20"></td>
-        <td><input type="number" class="y" value="60"></td>
+        <td><input type="number" class="x" value="50"></td>
+        <td><input type="number" class="y" value="80"></td>
       </tr>
       <tr>
         <td><input type="text" class="before" value="ぶんしょう"></td>
         <td><input type="text" class="after" value="文章"></td>
-        <td><input type="checkbox" class="break" checked></td>
-        <td><input type="number" class="x" value="140"></td>
-        <td><input type="number" class="y" value="120"></td>
+        <td><input type="number" class="x" value="50"></td>
+        <td><input type="number" class="y" value="160"></td>
       </tr>
     </tbody>
   </table>
   <button onclick="addRow()">行を追加</button>
 
-  <div>
-    フォント<select id="fontFamily">
-      <option value="Noto Sans JP">Noto Sans JP</option>
-      <option value="Kosugi Maru">Kosugi Maru</option>
-      <option value="M PLUS Rounded 1c">M PLUS Rounded 1c</option>
-    </select>
-
-    文字サイズ<input type="number" id="fontSize" value="32" min="8" max="100">
-    文字色<input type="color" id="fontColor" value="#000000">
-    背景色<input type="color" id="bgColor" value="#ffffff">
-    速度(ms/文字)<input type="number" id="speed" value="120" min="20" max="1000">
+  <div class="controls">
+    <label>フォント: <input type="text" id="fontFamily" value="'Noto Sans JP'"></label>
+    <label>文字サイズ: <input type="number" id="fontSize" value="32" min="8" max="100"></label>
+    <label>文字色: <input type="color" id="fontColor" value="#000000"></label>
+    <label>背景色: <input type="color" id="bgColor" value="#ffffff"></label>
+    <label>速度(ms/文字): <input type="number" id="speed" value="200" min="10" max="2000"></label>
+    <label>文字間(px): <input type="number" id="letterSpacing" value="2" min="0" max="50"></label>
   </div>
 
   <div>
-    <button onclick="generateSVG()">SVGを生成（プレビュー更新）</button>
+    <button onclick="generateSVG()">SVGを生成</button>
     <button onclick="copyCode()">コードをコピー</button>
     <button onclick="downloadSVG()">SVGを保存</button>
   </div>
@@ -76,9 +71,8 @@
     row.innerHTML = `
       <td><input type="text" class="before"></td>
       <td><input type="text" class="after"></td>
-      <td><input type="checkbox" class="break"></td>
-      <td><input type="number" class="x" value="20"></td>
-      <td><input type="number" class="y" value="60"></td>
+      <td><input type="number" class="x" value="50"></td>
+      <td><input type="number" class="y" value="100"></td>
     `;
     tbody.appendChild(row);
   }
@@ -89,11 +83,10 @@
     rows.forEach(row => {
       const before = row.querySelector('.before').value.trim();
       const after = row.querySelector('.after').value.trim();
-      const breakLine = row.querySelector('.break').checked;
-      const x = parseFloat(row.querySelector('.x').value) || 0;
-      const y = parseFloat(row.querySelector('.y').value) || 0;
+      const x = parseFloat(row.querySelector('.x').value);
+      const y = parseFloat(row.querySelector('.y').value);
       if (before || after) {
-        result.push({ before, after: after || before, break: breakLine, x, y });
+        result.push({ before, after: after || before, x, y });
       }
     });
     return result;
@@ -106,43 +99,39 @@
     const fontColor = document.getElementById('fontColor').value;
     const bgColor = document.getElementById('bgColor').value;
     const speed = parseInt(document.getElementById('speed').value, 10);
+    const letterSpacing = parseInt(document.getElementById('letterSpacing').value, 10);
 
-    let totalTime = 0;
+    const totalDuration = inputData.length * speed * 2;
 
-    const lines = inputData.map((item, index) => {
-      let t = totalTime / 1000;
-      let beforeText = '';
-      let afterText = '';
-      let charX = item.x;
+    let svgContent = `<!-- Typing SVG generated with settings: font=${fontFamily}, size=${fontSize}, color=${fontColor}, bg=${bgColor}, spacing=${letterSpacing}, speed=${speed} -->\n`;
+    svgContent += `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">\n`;
+    svgContent += `<rect width="100%" height="100%" fill="${bgColor}"/>\n`;
 
-      for (let i = 0; i < item.before.length; i++) {
-        const delay = (i * speed) / 1000;
-        beforeText += `\n<text x="${charX + i * (fontSize * 0.6)}" y="${item.y}" opacity="0">${item.before[i]}<set attributeName="opacity" to="1" begin="${(t + delay).toFixed(2)}s" />`;
-        beforeText += `</text>`;
-      }
+    inputData.forEach((item, i) => {
+      const delayBefore = i * (speed * 2);
+      const fadeOutStart = delayBefore + item.before.length * speed;
+      const fadeOutEnd = fadeOutStart + 400;
+      const fadeInStart = fadeOutEnd + 200;
 
-      const disappear = ((item.before.length + 1) * speed) / 1000;
-      const appearAfter = (disappear + 0.5).toFixed(2);
-      afterText = `<text x="${item.x}" y="${item.y}" opacity="0">${item.after}<set attributeName="opacity" to="1" begin="${(t + parseFloat(appearAfter)).toFixed(2)}s" /></text>`;
+      svgContent += `\n<!-- Line ${i+1}: before→after -->\n`;
+      svgContent += `<text x="${item.x}" y="${item.y}" font-size="${fontSize}" fill="${fontColor}" font-family="${fontFamily}" letter-spacing="${letterSpacing}" opacity="0">${item.before}
+        <animate attributeName="opacity" from="0" to="1" begin="${delayBefore}ms" dur="200ms" fill="freeze" />
+        <animate attributeName="opacity" from="1" to="0" begin="${fadeOutStart}ms" dur="400ms" fill="freeze" />
+      </text>\n`;
+      svgContent += `<text x="${item.x}" y="${item.y}" font-size="${fontSize}" fill="${fontColor}" font-family="${fontFamily}" letter-spacing="${letterSpacing}" opacity="0">${item.after}
+        <animate attributeName="opacity" from="0" to="1" begin="${fadeInStart}ms" dur="400ms" fill="freeze" />
+      </text>\n`;
+    });
 
-      const underline = `<line x1="${item.x}" y1="${item.y + 8}" x2="${item.x}" y2="${item.y + 8}" stroke="${fontColor}" stroke-width="1"><animate attributeName="x2" from="${item.x}" to="${item.x + item.before.length * (fontSize * 0.6)}" dur="${(item.before.length * speed) / 1000}s" begin="${t.toFixed(2)}s" fill="freeze"/></line>`;
+    svgContent += `</svg>`;
 
-      const cursor = `<rect class="cursor" x="${item.x}" y="${item.y - fontSize}" width="2" height="${fontSize}" fill="${fontColor}"><animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite" begin="${t.toFixed(2)}s"/></rect>`;
-
-      totalTime += (item.before.length * speed) + 1200; // before打ち込み+消去+after表示
-
-      return `${cursor}\n${beforeText}\n${underline}\n${afterText}`;
-    }).join('\n');
-
-    const svg = `<!-- typing_smil.svg -->\n<!--\n① 行データ：自動生成\n② 表示速度：${speed}ms／文字\n③ スタイル：font-size=${fontSize}, color=${fontColor}, background=${bgColor}\n-->\n<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">\n<style>\n  text { font-family: '${fontFamily}', sans-serif; font-size: ${fontSize}px; fill: ${fontColor}; }\n  .cursor { fill: ${fontColor}; }\n</style>\n<rect width="100%" height="100%" fill="${bgColor}"/>\n${lines}\n</svg>`;
-
-    const preview = document.getElementById('preview');
-    preview.innerHTML = svg;
-    document.getElementById('svgCode').value = svg;
+    document.getElementById('preview').innerHTML = svgContent;
+    document.getElementById('svgCode').value = svgContent;
   }
 
   function copyCode() {
-    navigator.clipboard.writeText(document.getElementById('svgCode').value);
+    const text = document.getElementById('svgCode').value;
+    navigator.clipboard.writeText(text);
     alert('SVGコードをコピーしました');
   }
 
@@ -151,7 +140,7 @@
     const blob = new Blob([text], { type: 'image/svg+xml' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'typing_smil.svg';
+    a.download = 'typing-smil.svg';
     a.click();
   }
   </script>
