@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Typing SVG SMIL Generator (CoFolia 対応)</title>
+  <style>
+    body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;margin:18px}
+    h1{font-size:18px;margin-bottom:8px}
+    table{border-collapse:collapse;width:100%;margin-bottom:8px}
+    th,td{border:1px solid #ddd;padding:6px;text-align:left}
+    input[type=text], input[type=number], select{width:100%;box-sizing:border-box}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+    .controls>label{display:flex;gap:6px;align-items:center}
+    #preview{border:1px solid #ccc;height:320px;display:flex;align-items:center;justify-content:center;background:#fafafa}
+    textarea{width:100%;height:180px;margin-top:8px;font-family:monospace;white-space:pre;overflow:auto}
+    .small{font-size:12px;color:#666}
+    button{padding:6px 10px}
+  </style>
+</head>
+<body>
+  <h1>Typing SVG SMIL Generator（CoFolia対応）</h1>
+
+  <p class="small">行を追加して「かな」「漢字」「改行」「開始X」「開始Y」を設定、全体設定で速度・フォント等を調整 → プレビューしてコードをコピー／ダウンロード</p>
+
+  <table id="inputTable">
+    <thead>
+      <tr>
+        <th style="width:35%">かな（before）</th>
+        <th style="width:25%">漢字（after）</th>
+        <th style="width:8%">改行</th>
+        <th style="width:16%">開始X（px）</th>
+        <th style="width:16%">開始Y（px）</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><input class="before" type="text" value="れいとなる"></td>
+        <td><input class="after" type="text" value="例となる"></td>
+        <td style="text-align:center"><input class="break" type="checkbox"></td>
+        <td><input class="startX" type="number" value="20" min="0"></td>
+        <td><input class="startY" type="number" value="60" min="0"></td>
+      </tr>
+      <tr>
+        <td><input class="before" type="text" value="ぶんしょう"></td>
+        <td><input class="after" type="text" value="文章"></td>
+        <td style="text-align:center"><input class="break" type="checkbox" checked></td>
+        <td><input class="startX" type="number" value="140" min="0"></td>
+        <td><input class="startY" type="number" value="120" min="0"></td>
+      </tr>
+    </tbody>
+  </table>
+  <button id="addRow">行を追加</button>
+  <button id="removeRow">末尾行を削除</button>
+
+  <div class="controls">
+    <label>フォント
+      <select id="fontSelect">
+        <option value="Noto+Sans+JP">Noto Sans JP</option>
+        <option value="Kosugi+Maru">Kosugi Maru</option>
+        <option value="M+PLUS+1p">M PLUS 1p</option>
+        <option value="Noto+Serif+JP">Noto Serif JP</option>
+      </select>
+    </label>
+
+    <label>文字サイズ <input id="fontSize" type="number" value="32" min="8" max="200"></label>
+    <label>文字色 <input id="fontColor" type="color" value="#000000"></label>
+    <label>背景色 <input id="bgColor" type="color" value="#ffffff"></label>
+    <label>速度（ms/文字） <input id="speed" type="number" value="120" min="20" step="10"></label>
+
+    <label>文字幅係数 <input id="charCoef" type="number" value="0.6" step="0.05" min="0.3" max="1.2"></label>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button id="generate">SVGを生成（プレビュー更新）</button>
+    <button id="copy">コードをコピー</button>
+    <button id="download">SVGを保存</button>
+    <button id="resetPreview">プレビュー リセット</button>
+  </div>
+
+  <div id="preview">プレビューはここに表示されます</div>
+
+  <textarea id="svgCode" readonly placeholder="ここに生成されたSVGコードが表示されます"></textarea>
+
+  <script>
+  // --- ユーティリティ ---
+  function $(sel, root=document) { return root.querySelector(sel); }
+  function $all(sel, root=document) { return Array.from(root.querySelectorAll(sel)); }
+
+  document.getElementById('addRow').addEventListener('click', ()=>{
+    const tbody = $('#inputTable tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input class="before" type="text"></td>
+      <td><input class="after" type="text"></td>
+      <td style="text-align:center"><input class="break" type="checkbox"></td>
+      <td><input class="startX" type="number" value="20" min="0"></td>
+      <td><input class="startY" type="number" value="60" min="0"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('removeRow').addEventListener('click', ()=>{
+    const tbody = $('#inputTable tbody');
+    if (tbody.rows.length>0) tbody.removeChild(tbody.lastElementChild);
+  });
+
+  // Google Fonts を動的に読み込む
+  function loadGoogleFont(name){
+    const linkId = 'gfont-'+name.replace(/[^a-z0-9]/gi,'');
+    if (document.getElementById(linkId)) return;
+    const href = 'https://fonts.googleapis.com/css2?family='+name+'&display=swap';
+    const l = document.createElement('link'); l.rel='stylesheet'; l.href=href; l.id=linkId; document.head.appendChild(l);
+  }
+  // 初期フォント読み込み
+  loadGoogleFont($('#fontSelect').value);
+  $('#fontSelect').addEventListener('change', (e)=> loadGoogleFont(e.target.value));
+
+  function getRows(){
+    const rows = $all('#inputTable tbody tr');
+    return rows.map(r=>({
+      before: r.querySelector('.before').value || '',
+      after: r.querySelector('.after').value || r.querySelector('.before').value || '',
+      br: r.querySelector('.break').checked,
+      x: parseFloat(r.querySelector('.startX').value)||0,
+      y: parseFloat(r.querySelector('.startY').value)||0
+    }));
+  }
+
+  function escapeXml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function buildSMIL(rows, opts){
+    const {fontSize,fontColor,bgColor,speed,fontName,charCoef} = opts;
+    const charW = fontSize * charCoef; // 文字幅の近似
+
+    // header comment with ①②③ info as requested
+    let headerComment = `<!--\n  ① 行データ：\n`;
+    rows.forEach((r,i)=>{
+      headerComment += `    ${i+1}. ${r.before} → ${r.after} （改行:${r.br} X:${r.x} Y:${r.y}）\n`;
+    });
+    headerComment += `\n  ② 表示速度： ${speed} ms/文字\n  ③ スタイル（下の <style> を編集）\n-->\n`;
+
+    // SVG スタイル
+    const style = `text{font-family:'${fontName.replace(/\+/g,' ')}',sans-serif; font-size:${fontSize}px; fill:${fontColor};} .cursor{fill:${fontColor}}`;
+
+    // assemble body
+    let body = '';
+    // constants for overall size
+    const width = 800, height = 400;
+
+    // keep a timeline: currentTime (seconds)
+    let timeline = 0; // we will not strictly chain lines; we compute per-char absolute times
+
+    // For cursor movement animation, we will create per-line cursor <animate> with discrete steps
+
+    rows.forEach((r, idx)=>{
+      const before = r.before;
+      const after = r.after;
+      const startX = r.x;
+      const startY = r.y;
+
+      // per-char begin times
+      const charBegins = [];
+      for (let i=0;i<before.length;i++){
+        const t = (timeline + (i * speed))/1000; // seconds
+        charBegins.push(t);
+      }
+      // compute the time when last char shown
+      const endTyping = (charBegins.length? charBegins[charBegins.length-1] + (speed/1000): timeline);
+      const switchToKanjiAt = endTyping + 0.3; // 300ms after finish typing
+
+      // Add cursor for this line
+      // cursor x will step to after each char; values string
+      const cursorValues = [];
+      cursorValues.push(startX);
+      for (let i=0;i<before.length;i++) cursorValues.push(startX + ((i+1)*charW));
+      // ensure at least one value
+      const cursorDur = Math.max((before.length * speed)/1000, 0.001);
+
+      // comment
+      body += `<!-- line ${idx+1}: before='${escapeXml(before)}' after='${escapeXml(after)}' startX=${startX} startY=${startY} -->\n`;
+
+      // cursor rectangle (with independent blink and x step animation)
+      const cursorId = `cursor${idx+1}`;
+      body += `<rect id="${cursorId}" class="cursor" x="${startX}" y="${startY - fontSize}" width="2" height="${fontSize}">`;
+      // blink
+      body += `<animate attributeName="opacity" values="1;0;1" dur="1s" repeatCount="indefinite" />`;
+      // x step animate (discrete so it jumps)
+      // values must be semicolon separated and dur equals cursorDur; begin 0s; fill freeze so it remains at final position
+      if (cursorValues.length>0){
+        body += `<animate attributeName="x" dur="${cursorDur}s" values="${cursorValues.join(';')}" calcMode="discrete" begin="0s" fill="freeze" />`;
+      }
+      body += `</rect>\n`;
+
+      // per-character kana texts (each tspan as separate text block positioned with x offset)
+      for (let i=0;i<before.length;i++){
+        const ch = escapeXml(before[i]);
+        const bx = startX + (i * charW);
+        const by = startY;
+        const begin = (charBegins[i]).toFixed(3) + 's';
+        body += `<text x="${bx}" y="${by}" opacity="0">${ch}<set attributeName="opacity" to="1" begin="${begin}" fill="freeze" /></text>\n`;
+      }
+
+      // underline: animate x2 from startX to startX + before.length*charW
+      const underlineX2 = startX + (before.length * charW);
+      const underlineDur = Math.max((before.length * speed)/1000, 0.001);
+      body += `<line x1="${startX}" y1="${startY+8}" x2="${startX}" y2="${startY+8}" stroke="${fontColor}" stroke-width="1">`;
+      body += `<animate attributeName="x2" from="${startX}" to="${underlineX2}" dur="${underlineDur}s" begin="0s" fill="freeze" />`;
+      body += `</line>\n`;
+
+      // kanji replacement (single text that appears at switchToKanjiAt)
+      body += `<text x="${startX}" y="${startY}" opacity="0">${escapeXml(after)}<set attributeName="opacity" to="1" begin="${switchToKanjiAt.toFixed(3)}s" fill="freeze" /></text>\n`;
+
+      // advance timeline: if break then add an offset (we choose 0.2s) so next line types later; else keep typing continuous
+      timeline = switchToKanjiAt + (r.br? 0.4: 0.1);
+    });
+
+    const svg = `<?xml version="1.0" encoding="UTF-8"?>\n${headerComment}<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n  <style>${style}</style>\n  <rect width="100%" height="100%" fill="${bgColor}"/>\n${body}\n</svg>`;
+    return svg;
+  }
+
+  // generate button
+  document.getElementById('generate').addEventListener('click', ()=>{
+    const rows = getRows();
+    const opts = {
+      fontSize: parseFloat($('#fontSize').value)||32,
+      fontColor: $('#fontColor').value||'#000000',
+      bgColor: $('#bgColor').value||'#ffffff',
+      speed: parseFloat($('#speed').value)||120,
+      fontName: $('#fontSelect').value,
+      charCoef: parseFloat($('#charCoef').value)||0.6
+    };
+    // ensure font loaded
+    loadGoogleFont(opts.fontName);
+    const svgText = buildSMIL(rows, opts);
+    $('#svgCode').value = svgText;
+
+    // preview using object tag (object prevents inline script execution; our SVG has no script anyway)
+    const preview = $('#preview');
+    preview.innerHTML = '';
+    const blob = new Blob([svgText], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const obj = document.createElement('object'); obj.type='image/svg+xml'; obj.data = url; obj.width='100%'; obj.height='100%';
+    preview.appendChild(obj);
+    // revoke url after a delay to avoid immediate revoke interfering with rendering
+    setTimeout(()=> URL.revokeObjectURL(url), 2000);
+  });
+
+  // copy
+  document.getElementById('copy').addEventListener('click', async ()=>{
+    const txt = $('#svgCode').value;
+    if (!txt) return alert('まずSVGを生成してください。');
+    await navigator.clipboard.writeText(txt);
+    alert('SVGコードをコピーしました');
+  });
+
+  // download
+  document.getElementById('download').addEventListener('click', ()=>{
+    const txt = $('#svgCode').value;
+    if (!txt) return alert('まずSVGを生成してください。');
+    const blob = new Blob([txt], {type:'image/svg+xml'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'typing_smil.svg'; document.body.appendChild(a); a.click(); a.remove();
+  });
+
+  // reset preview
+  document.getElementById('resetPreview').addEventListener('click', ()=>{ $('#preview').innerHTML = 'プレビューはここに表示されます'; });
+
+  // auto-generate initial preview
+  document.getElementById('generate').click();
+  </script>
+</body>
+</html>
