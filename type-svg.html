@@ -2,147 +2,209 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=720">
-  <title>Typing SVG Generator (SMIL版)</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typing SVG SMIL Generator (一回再生)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP&family=Kosugi+Maru&family=M+PLUS+1p&display=swap" rel="stylesheet">
   <style>
-    body { font-family: 'Noto Sans JP', sans-serif; background: #f5f5f5; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-bottom: 12px; }
-    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    input[type="text"], input[type="number"], input[type="color"] { width: 90%; }
-    h1 { font-size: 20px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
-    button { margin: 4px; padding: 6px 12px; }
-    #preview { border: 1px solid #ccc; margin-top: 10px; background: white; }
-    textarea { width: 100%; height: 240px; margin-top: 8px; }
+    body { font-family: system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans JP',sans-serif; margin:18px; background:#f7f7f8; color:#222 }
+    h1 { font-size:18px; margin-bottom:8px }
+    table{width:100%;border-collapse:collapse;margin-bottom:8px}
+    th,td{border:1px solid #ddd;padding:6px;text-align:center}
+    input[type=text],input[type=number],select,input[type=color]{width:100%;box-sizing:border-box}
+    .controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+    .controls label{display:flex;gap:6px;align-items:center}
+    #preview{border:1px solid #ccc;height:320px;display:flex;align-items:center;justify-content:center;background:#fff}
+    textarea{width:100%;height:220px;margin-top:8px;font-family:monospace;white-space:pre;overflow:auto}
+    button{padding:6px 10px}
+    .small{font-size:12px;color:#666}
   </style>
 </head>
 <body>
-  <h1>Typing SVG Generator（SMIL対応）</h1>
+  <h1>Typing SVG SMIL Generator（1回再生）</h1>
+  <p class="small">各行は「before(かな) をタイプ表示 → 消去 → after(漢字) 表示 → 待機」を順に1回だけ実行します。出力SVGにスクリプトは含まれません（CoFolia対応）。</p>
 
   <table id="inputTable">
     <thead>
       <tr>
-        <th>へんかまえ（かな）</th>
-        <th>変化後（漢字）</th>
-        <th>X座標</th>
-        <th>Y座標</th>
+        <th>かな（before）</th>
+        <th>漢字（after）</th>
+        <th>X(px)</th>
+        <th>Y(px)</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><input type="text" class="before" value="れいとなる"></td>
-        <td><input type="text" class="after" value="例となる"></td>
-        <td><input type="number" class="x" value="50"></td>
-        <td><input type="number" class="y" value="80"></td>
+        <td><input class="before" type="text" value="れいとなる"></td>
+        <td><input class="after" type="text" value="例となる"></td>
+        <td><input class="x" type="number" value="50"></td>
+        <td><input class="y" type="number" value="80"></td>
       </tr>
       <tr>
-        <td><input type="text" class="before" value="ぶんしょう"></td>
-        <td><input type="text" class="after" value="文章"></td>
-        <td><input type="number" class="x" value="50"></td>
-        <td><input type="number" class="y" value="160"></td>
+        <td><input class="before" type="text" value="ぶんしょう"></td>
+        <td><input class="after" type="text" value="文章"></td>
+        <td><input class="x" type="number" value="50"></td>
+        <td><input class="y" type="number" value="160"></td>
       </tr>
     </tbody>
   </table>
-  <button onclick="addRow()">行を追加</button>
+  <div style="margin-bottom:8px">
+    <button id="addRow">行を追加</button>
+    <button id="removeRow">末尾行を削除</button>
+  </div>
 
   <div class="controls">
-    <label>フォント: <input type="text" id="fontFamily" value="'Noto Sans JP'"></label>
-    <label>文字サイズ: <input type="number" id="fontSize" value="32" min="8" max="100"></label>
-    <label>文字色: <input type="color" id="fontColor" value="#000000"></label>
-    <label>背景色: <input type="color" id="bgColor" value="#ffffff"></label>
-    <label>速度(ms/文字): <input type="number" id="speed" value="200" min="10" max="2000"></label>
-    <label>文字間(px): <input type="number" id="letterSpacing" value="2" min="0" max="50"></label>
+    <label>フォント
+      <select id="fontFamily">
+        <option value="Noto Sans JP">Noto Sans JP</option>
+        <option value="Kosugi Maru">Kosugi Maru</option>
+        <option value="M PLUS 1p">M PLUS 1p</option>
+      </select>
+    </label>
+
+    <label>文字サイズ <input id="fontSize" type="number" value="32" min="8"></label>
+    <label>文字色 <input id="fontColor" type="color" value="#000000"></label>
+    <label>背景色 <input id="bgColor" type="color" value="#ffffff"></label>
+
+    <label>速度(ms/文字) <input id="speed" type="number" value="120" min="10"></label>
+    <label>待機(ms) <input id="wait" type="number" value="800" min="0"></label>
+    <label>文字間(px) <input id="letterSpacing" type="number" value="2" min="0"></label>
   </div>
 
-  <div>
-    <button onclick="generateSVG()">SVGを生成</button>
-    <button onclick="copyCode()">コードをコピー</button>
-    <button onclick="downloadSVG()">SVGを保存</button>
+  <div style="display:flex;gap:8px;margin-bottom:8px">
+    <button id="generate">SVGを生成（プレビュー更新）</button>
+    <button id="copy">コードをコピー</button>
+    <button id="download">SVGを保存</button>
   </div>
 
-  <div id="preview"></div>
-  <textarea id="svgCode" readonly></textarea>
+  <div id="preview">プレビューはここに表示されます</div>
+  <textarea id="svgCode" readonly placeholder="ここに生成されたSVGコードが表示されます"></textarea>
 
   <script>
-  function addRow() {
+  // 行追加/削除
+  document.getElementById('addRow').addEventListener('click', ()=>{
     const tbody = document.querySelector('#inputTable tbody');
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td><input type="text" class="before"></td>
-      <td><input type="text" class="after"></td>
-      <td><input type="number" class="x" value="50"></td>
-      <td><input type="number" class="y" value="100"></td>
-    `;
-    tbody.appendChild(row);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input class="before" type="text"></td><td><input class="after" type="text"></td><td><input class="x" type="number" value="50"></td><td><input class="y" type="number" value="100"></td>`;
+    tbody.appendChild(tr);
+  });
+  document.getElementById('removeRow').addEventListener('click', ()=>{
+    const tbody = document.querySelector('#inputTable tbody');
+    if (tbody.rows.length>0) tbody.removeChild(tbody.lastElementChild);
+  });
+
+  function getRows(){
+    return Array.from(document.querySelectorAll('#inputTable tbody tr')).map(r=>({
+      before: r.querySelector('.before').value || '',
+      after: r.querySelector('.after').value || '',
+      x: parseFloat(r.querySelector('.x').value) || 0,
+      y: parseFloat(r.querySelector('.y').value) || 0
+    }));
   }
 
-  function getInputData() {
-    const rows = document.querySelectorAll('#inputTable tbody tr');
-    const result = [];
-    rows.forEach(row => {
-      const before = row.querySelector('.before').value.trim();
-      const after = row.querySelector('.after').value.trim();
-      const x = parseFloat(row.querySelector('.x').value);
-      const y = parseFloat(row.querySelector('.y').value);
-      if (before || after) {
-        result.push({ before, after: after || before, x, y });
+  function escapeXml(s){ return (s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function buildSVG(rows, opts){
+    const {fontFamily,fontSize,fontColor,bgColor,speed,wait,letterSpacing} = opts;
+    let svg = `<!-- Typing SVG generated by generator -->\n`;
+    svg += `<!-- ① 行データ: ${rows.map((r,i)=>`${i+1}:${r.before}->${r.after} (x=${r.x},y=${r.y})`).join('; ')} -->\n`;
+    svg += `<!-- ② 速度(ms/文字): ${speed}  ③ 待機(ms): ${wait}  ④ 文字間(px): ${letterSpacing} -->\n`;
+    svg += `<?xml version="1.0" encoding="utf-8"?>\n`;
+    svg += `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">\n`;
+    svg += `<style>text{font-family:'${fontFamily}';font-size:${fontSize}px;fill:${fontColor};letter-spacing:${letterSpacing}px}</style>\n`;
+    svg += `<rect width="100%" height="100%" fill="${bgColor}"/>\n`;
+
+    // timeline in ms
+    let timeline = 0;
+    const fadeDur = 200; // ms for fade out/in
+    const charFadeDur = Math.max(80, Math.round(Math.min(300, fontSize*2)) );
+
+    rows.forEach((row, idx)=>{
+      const before = row.before;
+      const after = row.after;
+      const x = row.x;
+      const y = row.y;
+
+      // per-character type in: each char appears at timeline + i*speed
+      for (let i=0;i<before.length;i++){
+        const ch = escapeXml(before[i]);
+        const begin = timeline + i*speed;
+        svg += `<text x="${x + i*(fontSize*0.6)}" y="${y}" opacity="0">${ch}`;
+        svg += `<animate attributeName="opacity" from="0" to="1" begin="${begin}ms" dur="${charFadeDur}ms" fill="freeze" />`;
+        svg += `</text>\n`;
       }
-    });
-    return result;
-  }
 
-  function generateSVG() {
-    const inputData = getInputData();
-    const fontFamily = document.getElementById('fontFamily').value;
-    const fontSize = parseInt(document.getElementById('fontSize').value, 10);
-    const fontColor = document.getElementById('fontColor').value;
-    const bgColor = document.getElementById('bgColor').value;
-    const speed = parseInt(document.getElementById('speed').value, 10);
-    const letterSpacing = parseInt(document.getElementById('letterSpacing').value, 10);
+      const typingEnd = timeline + Math.max(0, before.length-1)*speed + charFadeDur; // ms when last char finished fading in
+      // wait a tiny moment then fade out whole before
+      const beforeFadeStart = typingEnd + 80; // small pause after last char
+      svg += `<text x="${x}" y="${y}" opacity="1">${escapeXml(before)}`;
+      // This invisible text will control global fade-out: we animate its opacity from 1->0 to hide; begin at beforeFadeStart
+      svg += `<animate attributeName="opacity" from="1" to="0" begin="${beforeFadeStart}ms" dur="${fadeDur}ms" fill="freeze" />`;
+      svg += `</text>\n`;
 
-    const totalDuration = inputData.length * speed * 2;
+      // after appears only after before fully faded out
+      const afterBegin = beforeFadeStart + fadeDur;
+      svg += `<text x="${x}" y="${y}" opacity="0">${escapeXml(after)}`;
+      svg += `<animate attributeName="opacity" from="0" to="1" begin="${afterBegin}ms" dur="${fadeDur}ms" fill="freeze" />`;
+      svg += `</text>\n`;
 
-    let svgContent = `<!-- Typing SVG generated with settings: font=${fontFamily}, size=${fontSize}, color=${fontColor}, bg=${bgColor}, spacing=${letterSpacing}, speed=${speed} -->\n`;
-    svgContent += `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="400" viewBox="0 0 800 400">\n`;
-    svgContent += `<rect width="100%" height="100%" fill="${bgColor}"/>\n`;
-
-    inputData.forEach((item, i) => {
-      const delayBefore = i * (speed * 2);
-      const fadeOutStart = delayBefore + item.before.length * speed;
-      const fadeOutEnd = fadeOutStart + 400;
-      const fadeInStart = fadeOutEnd + 200;
-
-      svgContent += `\n<!-- Line ${i+1}: before→after -->\n`;
-      svgContent += `<text x="${item.x}" y="${item.y}" font-size="${fontSize}" fill="${fontColor}" font-family="${fontFamily}" letter-spacing="${letterSpacing}" opacity="0">${item.before}
-        <animate attributeName="opacity" from="0" to="1" begin="${delayBefore}ms" dur="200ms" fill="freeze" />
-        <animate attributeName="opacity" from="1" to="0" begin="${fadeOutStart}ms" dur="400ms" fill="freeze" />
-      </text>\n`;
-      svgContent += `<text x="${item.x}" y="${item.y}" font-size="${fontSize}" fill="${fontColor}" font-family="${fontFamily}" letter-spacing="${letterSpacing}" opacity="0">${item.after}
-        <animate attributeName="opacity" from="0" to="1" begin="${fadeInStart}ms" dur="400ms" fill="freeze" />
-      </text>\n`;
+      // advance timeline: after has faded in; then wait specified ms before next row
+      timeline = afterBegin + fadeDur + wait;
     });
 
-    svgContent += `</svg>`;
-
-    document.getElementById('preview').innerHTML = svgContent;
-    document.getElementById('svgCode').value = svgContent;
+    svg += `</svg>`;
+    return svg;
   }
 
-  function copyCode() {
+  document.getElementById('generate').addEventListener('click', ()=>{
+    const rows = getRows().filter(r=>r.before||r.after);
+    const opts = {
+      fontFamily: document.getElementById('fontFamily').value,
+      fontSize: parseInt(document.getElementById('fontSize').value,10)||32,
+      fontColor: document.getElementById('fontColor').value||'#000',
+      bgColor: document.getElementById('bgColor').value||'#fff',
+      speed: parseInt(document.getElementById('speed').value,10)||120,
+      wait: parseInt(document.getElementById('wait').value,10)||800,
+      letterSpacing: parseInt(document.getElementById('letterSpacing').value,10)||2
+    };
+
+    // ensure google font loaded if necessary (only Noto is preloaded in head)
+    if (opts.fontFamily && opts.fontFamily !== 'Noto Sans JP'){
+      const linkId = 'gfont-' + opts.fontFamily.replace(/\s+/g,'');
+      if (!document.getElementById(linkId)){
+        const l = document.createElement('link'); l.rel='stylesheet'; l.id=linkId;
+        l.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(opts.fontFamily) + '&display=swap';
+        document.head.appendChild(l);
+      }
+    }
+
+    const svg = buildSVG(rows, opts);
+    document.getElementById('svgCode').value = svg;
+
+    const preview = document.getElementById('preview');
+    preview.innerHTML = '';
+    const blob = new Blob([svg], {type:'image/svg+xml;charset=utf-8'});
+    const url = URL.createObjectURL(blob);
+    const obj = document.createElement('object'); obj.type='image/svg+xml'; obj.data = url; obj.width='100%'; obj.height='100%';
+    preview.appendChild(obj);
+    setTimeout(()=>URL.revokeObjectURL(url), 3000);
+  });
+
+  document.getElementById('copy').addEventListener('click', async ()=>{
     const text = document.getElementById('svgCode').value;
-    navigator.clipboard.writeText(text);
+    if (!text) return alert('SVGを生成してください');
+    await navigator.clipboard.writeText(text);
     alert('SVGコードをコピーしました');
-  }
+  });
 
-  function downloadSVG() {
+  document.getElementById('download').addEventListener('click', ()=>{
     const text = document.getElementById('svgCode').value;
-    const blob = new Blob([text], { type: 'image/svg+xml' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'typing-smil.svg';
-    a.click();
-  }
+    if (!text) return alert('SVGを生成してください');
+    const blob = new Blob([text], {type:'image/svg+xml'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'typing-smil.svg'; a.click();
+  });
+
+  // initial generate
+  document.getElementById('generate').click();
   </script>
 </body>
 </html>
