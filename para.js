@@ -441,3 +441,4 @@ function updateTextPreviews() {
     updateTextPreviews();
   });
 });
+updateTextPreviews();
