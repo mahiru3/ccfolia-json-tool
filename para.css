@@ -45,7 +45,7 @@ textarea{
 }
 .hint{font-size:12px;color:#555}
 
-/* --- 追加: リアルタイム文字プレビュー --- */
+/* --- リアルタイム文字プレビュー（旧：使用しないなら残してOK） --- */
 .livePreview{
   border:1px solid #ddd;
   border-radius:10px;
@@ -57,7 +57,7 @@ textarea{
 .pvLabel{width:22px;font-size:12px;color:#666}
 .pvText{flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 
-/* --- 追加: カラーUI --- */
+/* --- カラーUI --- */
 .colorRow{
   display:flex;
   gap:8px;
@@ -78,9 +78,13 @@ textarea{
   border-radius:8px;
   background:#fff;
   flex:0 0 auto;
+  width:40px;
+  text-align:center;
+  font-size:16px;
+  line-height:1;
 }
 
-/* --- 追加: カラーパネル（モーダル） --- */
+/* --- カラーパネル（モーダル） --- */
 .colorPanel{
   position:fixed;
   inset:0;
@@ -125,44 +129,34 @@ textarea{
   flex-direction:column;
   gap:8px;
 }
-.eyeBtn{
-  width:40px;
-  text-align:center;
-  font-size:16px;
-  line-height:1;
-}
+
+/* --- 旧2カラム（今は使わないなら残してOK） --- */
 .layout2col{
   display:grid;
   grid-template-columns: 520px 1fr;
   gap:16px;
   align-items:start;
 }
-
 @media (max-width: 1100px){
   .layout2col{ grid-template-columns: 1fr; }
 }
-
 .leftPane fieldset{ margin-bottom:12px; }
-
 .rightPane{
   display:flex;
   flex-direction:column;
   gap:12px;
 }
-
 .pvBox{
   border:1px solid #ddd;
   border-radius:10px;
   padding:10px 12px;
   background:#fff;
 }
-
 .pvBoxTitle{
   font-size:12px;
   color:#666;
   margin-bottom:6px;
 }
-
 .pvTextBig{
   font-size:42px;
   line-height:1.2;
@@ -170,9 +164,97 @@ textarea{
   overflow:hidden;
   text-overflow:ellipsis;
 }
-
 .pvNote{
   font-size:12px;
   color:#888;
   margin-top:6px;
+}
+
+/* =========================================================
+   ★ 新UI：画像のような「表＋右プレビュー枠」レイアウト
+   ========================================================= */
+.uiGrid{
+  display:grid;
+  grid-template-columns: 140px 1fr 1fr 360px; /* 項目名 / ① / ② / プレビュー */
+  gap:8px 12px;
+  align-items:center;
+}
+
+@media (max-width: 1100px){
+  /* 画面が狭い場合は右プレビューを下へ */
+  .uiGrid{
+    grid-template-columns: 140px 1fr 1fr;
+  }
+  .gPreviewA, .gPreviewB{
+    grid-column: 1 / -1 !important;
+    grid-row: auto !important;
+  }
+}
+
+/* 見出し */
+.gHead{
+  font-size:13px;
+  font-weight:600;
+  background:#fff3b0;
+  border:1px solid #e6d27a;
+  border-radius:6px;
+  padding:6px 8px;
+}
+.gHeadBlank{
+  background:transparent;
+  border:none;
+  padding:0;
+}
+
+/* 左ラベル */
+.gLabel{
+  font-size:13px;
+  color:#333;
+}
+
+/* 通常セル（必要なら将来装飾用） */
+.gCell{}
+
+/* 入力不要セル（—） */
+.gDisabled{
+  color:#777;
+  background:#f5f5f5;
+  border:1px dashed #ccc;
+  border-radius:6px;
+  padding:6px 8px;
+}
+
+/* 右プレビュー枠 */
+.gPreview{
+  border:2px solid #111;
+  border-radius:8px;
+  padding:10px 12px;
+  background:#fff;
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  gap:8px;
+}
+.gPreviewTitle{
+  font-size:14px;
+  font-weight:700;
+}
+.gPreviewBody{
+  font-size:36px;
+  line-height:1.2;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  min-height:56px;
+}
+
+/* プレビューの配置（画像風の上下2ブロック） */
+.gPreviewA{
+  grid-column:4;
+  grid-row:2 / span 6;  /* 上ブロック：必要なら span を増減 */
+}
+.gPreviewB{
+  grid-column:4;
+  grid-row:8 / span 6;  /* 下ブロック：必要なら span を増減 */
 }
