@@ -305,4 +305,15 @@ textarea{
 /* プレビュータイトルの下線も同色（視認性強化） */
 .gPreviewA .gPreviewTitle{ border-bottom:1px solid #9cc9ff; padding-bottom:6px; }
 .gPreviewB .gPreviewTitle{ border-bottom:1px solid #9ed3a5; padding-bottom:6px; }
+/* gLabel / gCell の最小レイアウト保証 */
+.uiGrid .gLabel{
+  grid-column: 1;
+  justify-self: start;
+  align-self: center;
+  padding: 6px 0;
+}
+.uiGrid .gCell,
+.uiGrid .gDisabled{
+  min-width: 0; /* これが無いと中身が押して崩れることがある */
+}
 
