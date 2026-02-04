@@ -402,5 +402,11 @@ function init(){
   updateTextPreviews();
   buildSVG();
 }
+if (!colorPicker){
+  ...
+  colorPicker.on("color:change", ...);
+  colorPicker.color.hexString = current; // ★追加：初期黒を潰す
+}
+
 
 window.addEventListener("DOMContentLoaded", init);
