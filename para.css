@@ -258,3 +258,51 @@ textarea{
   grid-column:4;
   grid-row:8 / span 6;  /* 下ブロック：必要なら span を増減 */
 }
+/* =========================================================
+   列ごとの色分け（①=薄青 / ②=薄緑）＋プレビュー枠線も同色
+   ========================================================= */
+
+/* 見出し（タイトル帯） */
+.uiGrid .gHead:nth-child(2){ /* ①見出し */
+  background:#dff1ff;
+  border-color:#9cc9ff;
+}
+.uiGrid .gHead:nth-child(3){ /* ②見出し */
+  background:#e6f7e8;
+  border-color:#9ed3a5;
+}
+
+/* ①列・②列の入力セルを色分け（gLabel行は除外） */
+.uiGrid > .gCell:nth-child(4n+2){
+  background:#f2f9ff;
+  border-radius:8px;
+  padding:6px;
+}
+.uiGrid > .gCell:nth-child(4n+3){
+  background:#f3fbf4;
+  border-radius:8px;
+  padding:6px;
+}
+
+/* disabledセル（—）も列色に寄せる */
+.uiGrid > .gDisabled:nth-child(4n+2){
+  background:#f2f9ff;
+  border-color:#c7e3ff;
+}
+.uiGrid > .gDisabled:nth-child(4n+3){
+  background:#f3fbf4;
+  border-color:#cbe8cf;
+}
+
+/* 右プレビュー枠線を列色に */
+.gPreviewA{
+  border-color:#9cc9ff;
+}
+.gPreviewB{
+  border-color:#9ed3a5;
+}
+
+/* プレビュータイトルの下線も同色（視認性強化） */
+.gPreviewA .gPreviewTitle{ border-bottom:1px solid #9cc9ff; padding-bottom:6px; }
+.gPreviewB .gPreviewTitle{ border-bottom:1px solid #9ed3a5; padding-bottom:6px; }
+
