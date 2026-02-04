@@ -18,12 +18,12 @@
       <label>テキスト①</label>
       <input id="text1" type="text" value="Call of Cthulhu">
     </div>
-    <div>
-      <label>色①</label>
-      <div class="colorRow">
-  <input id="color1picker" type="color" value="#000000" aria-label="色①ピッカー">
-  <input id="color1" type="text" value="#000000" inputmode="text" placeholder="#RRGGBB">
+<div class="colorRow">
+  <button type="button" class="colorBtn" id="color1btn" aria-label="色①を選択"></button>
+  <input id="color1" type="text" value="#000000" placeholder="#RRGGBB">
+  <button type="button" class="eyeBtn" id="color1eye">スポイト</button>
 </div>
+
 
     </div>
   </div>
@@ -83,12 +83,16 @@
       <label>テキスト②</label>
       <input id="text2" type="text" value="Welcome to the Mythos">
     </div>
-    <div>
-      <label>色②</label>
-   <div class="colorRow">
-  <input id="color2picker" type="color" value="#000000" aria-label="色②ピッカー">
-  <input id="color2" type="text" value="#000000" inputmode="text" placeholder="#RRGGBB">
+<div id="colorPanel" class="colorPanel" hidden>
+  <div class="colorPanelInner">
+    <div class="colorPanelHeader">
+      <div id="colorPanelTitle">色選択</div>
+      <button type="button" id="colorPanelClose">×</button>
+    </div>
+    <div id="iroMount"></div>
+  </div>
 </div>
+
 
     </div>
   </div>
