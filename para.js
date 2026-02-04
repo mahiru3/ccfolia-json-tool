@@ -37,3 +37,22 @@ textarea{
   white-space:pre
 }
 .hint{font-size:12px;color:#555}
+function applyFontPreviewToSelect(selectId) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+
+  // option を自分の value のフォントで表示（確実）
+  [...sel.options].forEach((opt) => {
+    opt.style.fontFamily = opt.value;
+  });
+
+  // 選択中のフォントで select の表示も変える（確実）
+  const update = () => {
+    sel.style.fontFamily = sel.value;
+  };
+  sel.addEventListener("change", update);
+  update();
+}
+
+applyFontPreviewToSelect("font1sel");
+applyFontPreviewToSelect("font2sel");
