@@ -285,3 +285,111 @@ bindColorPair("color2", "color2picker");
 
 // 初期生成
 buildSVG();
+// ---- ホイール型カラーピッカー（iro.js） ----
+let colorPicker = null;
+let activeColorTextId = null;   // "color1" or "color2"
+let activeColorBtnId = null;    // "color1btn" or "color2btn"
+
+function setBtnColor(btnId, hex) {
+  const btn = document.getElementById(btnId);
+  if (btn) btn.style.background = hex;
+}
+
+function openColorPanel(title, textId, btnId) {
+  activeColorTextId = textId;
+  activeColorBtnId = btnId;
+
+  const panel = document.getElementById("colorPanel");
+  const titleEl = document.getElementById("colorPanelTitle");
+  const text = document.getElementById(textId);
+
+  titleEl.textContent = title;
+
+  // 現在値
+  const current = normalizeHex(text.value) || "#000000";
+  text.value = current;
+  setBtnColor(btnId, current);
+
+  // 初回だけ生成
+  if (!colorPicker) {
+    colorPicker = new iro.ColorPicker("#iroMount", {
+      width: 240,
+      // 画像に近い：ホイール＋縦スライダー（明度/Value）
+      layout: [
+        { component: iro.ui.Wheel },
+        { component: iro.ui.Slider, options: { sliderType: "value" } }
+      ]
+    });
+
+    // 変更時：入力欄へ反映
+    colorPicker.on("color:change", (c) => {
+      const hex = c.hexString.toLowerCase();
+      if (activeColorTextId) {
+        const t = document.getElementById(activeColorTextId);
+        if (t) t.value = hex;
+      }
+      if (activeColorBtnId) setBtnColor(activeColorBtnId, hex);
+
+      // 即時プレビュー反映（SVGも更新したいなら buildSVG()）
+      updateTextPreviews();
+      buildSVG();
+    });
+  }
+
+  // 開くたびに現在色へ同期
+  colorPicker.color.hexString = current;
+
+  panel.hidden = false;
+}
+
+function closeColorPanel() {
+  const panel = document.getElementById("colorPanel");
+  panel.hidden = true;
+  activeColorTextId = null;
+  activeColorBtnId = null;
+}
+
+document.getElementById("colorPanelClose")?.addEventListener("click", closeColorPanel);
+document.getElementById("colorPanel")?.addEventListener("click", (e) => {
+  if (e.target && e.target.id === "colorPanel") closeColorPanel();
+});
+
+// ボタン結線（色①/色②）
+document.getElementById("color1btn")?.addEventListener("click", () => openColorPanel("色①", "color1", "color1btn"));
+document.getElementById("color2btn")?.addEventListener("click", () => openColorPanel("色②", "color2", "color2btn"));
+
+// 入力欄に手打ち → ボタン色も同期
+["color1", "color2"].forEach((id) => {
+  const t = document.getElementById(id);
+  const btnId = id + "btn";
+  t?.addEventListener("input", () => {
+    const n = normalizeHex(t.value);
+    if (n) setBtnColor(btnId, n);
+    updateTextPreviews();
+    buildSVG();
+  });
+});
+
+// ---- スポイト（EyeDropper API：対応ブラウザのみ） ----
+async function pickWithEyedropper(targetTextId, targetBtnId) {
+  if (!("EyeDropper" in window)) return;
+  try {
+    const eye = new EyeDropper();
+    const res = await eye.open();
+    const hex = normalizeHex(res.sRGBHex) || "#000000";
+    const t = document.getElementById(targetTextId);
+    if (t) t.value = hex;
+    setBtnColor(targetBtnId, hex);
+    updateTextPreviews();
+    buildSVG();
+  } catch (_) {
+    // キャンセル時は何もしない
+  }
+}
+
+document.getElementById("color1eye")?.addEventListener("click", () => pickWithEyedropper("color1", "color1btn"));
+document.getElementById("color2eye")?.addEventListener("click", () => pickWithEyedropper("color2", "color2btn"));
+
+// 初期ボタン色
+setBtnColor("color1btn", normalizeHex(document.getElementById("color1")?.value) || "#000000");
+setBtnColor("color2btn", normalizeHex(document.getElementById("color2")?.value) || "#000000");
