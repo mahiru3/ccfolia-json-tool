@@ -11,6 +11,8 @@ body{
 
 .colorRow{
   display:flex;
+
+  
   gap:6px;
   align-items:center;
 }
@@ -52,11 +54,21 @@ body{
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.3);
-  display:flex;
   justify-content:center;
   align-items:center;
   z-index:1000;
 }
+
+/* hidden 属性を最優先で効かせる */
+.colorPanel[hidden]{
+  display:none !important;
+}
+
+/* JSで開いたときだけ表示 */
+.colorPanel:not([hidden]){
+  display:flex;
+}
+
 
 .colorPanelInner{
   background:#fff;
