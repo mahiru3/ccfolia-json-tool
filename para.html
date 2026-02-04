@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <title>SVG手書き → 上下分割 → ②が浮かび上がり → 指定秒後に透明化</title>
   <meta name="viewport" content="width=device-width,initial-scale=1">
-
   <link rel="stylesheet" href="para.css">
 </head>
 <body>
+
 <script src="iro.min.js"></script>
 <script src="para.js" defer></script>
+
 <h1>①手書き → 上下分割消滅 → ②浮上 → 指定秒後に透明化（SVG/SMIL）</h1>
 
 <!-- リアルタイム文字プレビュー -->
@@ -25,176 +26,101 @@
 </div>
 
 <fieldset>
-  <legend>① 手書きテキスト（分割消滅する文字）</legend>
+  <legend>① 手書きテキスト</legend>
 
   <div class="row">
     <div>
       <label>テキスト①</label>
       <input id="text1" type="text" value="Call of Cthulhu">
     </div>
-
     <div>
       <label>色①</label>
       <div class="colorRow">
-        <button type="button" class="colorBtn" id="color1btn" aria-label="色①を選択"></button>
-        <input id="color1" type="text" value="#000000" placeholder="#RRGGBB">
-        <button type="button" class="eyeBtn" id="color1eye">スポイト</button>
+        <button id="color1btn" class="colorBtn"></button>
+        <input id="color1" type="text" value="#000000">
+        <button id="color1eye" class="eyeBtn">スポイト</button>
       </div>
     </div>
   </div>
 
   <div class="row">
     <div>
-      <label>サイズ①（px）</label>
-      <input id="size1" type="number" value="72" min="8" step="1">
+      <label>サイズ①</label>
+      <input id="size1" type="number" value="72">
     </div>
     <div>
-      <label>フォント①（候補）</label>
+      <label>フォント①</label>
       <select id="font1sel">
-        <option value="serif" selected>serif</option>
+        <option value="serif">serif</option>
         <option value="sans-serif">sans-serif</option>
-        <option value="monospace">monospace</option>
         <option value="Georgia, serif">Georgia</option>
         <option value="Times New Roman, serif">Times New Roman</option>
-        <option value="Garamond, serif">Garamond</option>
-        <option value="Palatino, serif">Palatino</option>
-        <option value="Arial, Helvetica, sans-serif">Arial</option>
-        <option value="Verdana, sans-serif">Verdana</option>
-        <option value="Tahoma, sans-serif">Tahoma</option>
-        <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
-        <option value="Impact, sans-serif">Impact</option>
-        <option value="Courier New, monospace">Courier New</option>
         <option value="Noto Sans JP, sans-serif">Noto Sans JP</option>
       </select>
-      <div class="hint">下の任意フォントが空ならこの選択を使用します。</div>
     </div>
   </div>
 
   <div class="row">
     <div>
-      <label>任意フォント①（空なら上を使用）</label>
-      <input id="font1free" type="text" placeholder="例）'Yu Mincho','Hiragino Mincho ProN',serif">
+      <label>任意フォント①</label>
+      <input id="font1free" type="text">
     </div>
     <div>
-      <label>文字間①（px）</label>
+      <label>文字間①</label>
       <input id="letter1" type="number" value="2" step="0.5">
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <label>1文字の基準描画秒①（baseDur, s）</label>
-      <input id="baseDur1" type="number" value="0.75" step="0.05" min="0.05">
-      <div class="hint">大きいほどゆっくり。字幅で自動補正。</div>
-    </div>
-    <div>
-      <label>上下分割・消滅の秒数①（s）</label>
-      <input id="splitDur" type="number" value="1.2" step="0.1" min="0.1">
     </div>
   </div>
 </fieldset>
 
 <fieldset>
-  <legend>② 浮かび上がるテキスト（①の後に出現 → 指定秒後に透明化）</legend>
+  <legend>② 浮かび上がるテキスト</legend>
 
   <div class="row">
     <div>
       <label>テキスト②</label>
       <input id="text2" type="text" value="Welcome to the Mythos">
     </div>
-
     <div>
       <label>色②</label>
       <div class="colorRow">
-        <button type="button" class="colorBtn" id="color2btn" aria-label="色②を選択"></button>
-        <input id="color2" type="text" value="#000000" placeholder="#RRGGBB">
-        <button type="button" class="eyeBtn" id="color2eye">スポイト</button>
+        <button id="color2btn" class="colorBtn"></button>
+        <input id="color2" type="text" value="#000000">
+        <button id="color2eye" class="eyeBtn">スポイト</button>
       </div>
     </div>
   </div>
 
   <div class="row">
     <div>
-      <label>サイズ②（px）</label>
-      <input id="size2" type="number" value="56" min="8" step="1">
+      <label>サイズ②</label>
+      <input id="size2" type="number" value="56">
     </div>
     <div>
-      <label>フォント②（候補）</label>
+      <label>フォント②</label>
       <select id="font2sel">
-        <option value="serif" selected>serif</option>
+        <option value="serif">serif</option>
         <option value="sans-serif">sans-serif</option>
-        <option value="monospace">monospace</option>
         <option value="Georgia, serif">Georgia</option>
         <option value="Times New Roman, serif">Times New Roman</option>
-        <option value="Garamond, serif">Garamond</option>
-        <option value="Palatino, serif">Palatino</option>
-        <option value="Arial, Helvetica, sans-serif">Arial</option>
-        <option value="Verdana, sans-serif">Verdana</option>
-        <option value="Tahoma, sans-serif">Tahoma</option>
-        <option value="Trebuchet MS, sans-serif">Trebuchet MS</option>
-        <option value="Impact, sans-serif">Impact</option>
-        <option value="Courier New, monospace">Courier New</option>
         <option value="Noto Sans JP, sans-serif">Noto Sans JP</option>
       </select>
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <label>任意フォント②（空なら上を使用）</label>
-      <input id="font2free" type="text" placeholder="例）'Yu Gothic','Meiryo',sans-serif">
-    </div>
-    <div>
-      <label>文字間②（px）</label>
-      <input id="letter2" type="number" value="1" step="0.5">
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <label>②のフェードイン秒数（s）</label>
-      <input id="riseDur" type="number" value="0.9" step="0.1" min="0.1">
-    </div>
-    <div>
-      <label>①完了→②出現までの待ち秒（s）</label>
-      <input id="afterDelay" type="number" value="0.2" step="0.05" min="0">
-    </div>
-  </div>
-
-  <div class="row">
-    <div>
-      <label>②の表示維持秒数（透明化までの待ち秒）</label>
-      <input id="hold2" type="number" value="1.5" step="0.1" min="0">
-    </div>
-    <div>
-      <label>②の消滅フェード秒数（s）</label>
-      <input id="fade2" type="number" value="0.8" step="0.1" min="0.05">
     </div>
   </div>
 </fieldset>
 
 <div class="actions">
   <button id="build">SVGを生成</button>
-  <button id="copy">SVGをコピー</button>
-  <button id="download">SVGをダウンロード</button>
 </div>
 
-<fieldset>
-  <legend>プレビュー（768×432）</legend>
-  <div class="preview" id="previewArea">ここにSVGが表示されます</div>
-</fieldset>
+<div class="preview" id="previewArea"></div>
+<textarea id="code" readonly></textarea>
 
-<fieldset>
-  <legend>生成SVGコード</legend>
-  <textarea id="code" readonly></textarea>
-</fieldset>
-
-<!-- 共有カラーパネル（①②どちらからでも開く） -->
+<!-- 色選択モーダル -->
 <div id="colorPanel" class="colorPanel" hidden>
   <div class="colorPanelInner">
     <div class="colorPanelHeader">
       <div id="colorPanelTitle">色選択</div>
-      <button type="button" id="colorPanelClose">×</button>
+      <button id="colorPanelClose">×</button>
     </div>
     <div id="iroMount"></div>
   </div>
