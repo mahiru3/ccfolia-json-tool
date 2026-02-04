@@ -1,47 +1,60 @@
-body{
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif;
-  margin:24px;
-  line-height:1.6
+// para.js（完全版）
+
+const meas = document.createElement("canvas").getContext("2d");
+
+function widthOf(ch, size, family) {
+  meas.font = `${size}px ${family}`;
+  return meas.measureText(ch).width;
 }
-h1{font-size:18px;margin:0 0 12px}
-fieldset{border:1px solid #ccc;border-radius:8px;padding:12px;margin:0 0 16px}
-label{display:block;font-size:13px;margin:6px 0 2px}
-input,select,button,textarea{font:inherit}
-input[type="text"],input[type="number"],select{
-  width:100%;
-  box-sizing:border-box;
-  padding:6px;
-  border:1px solid #bbb;
-  border-radius:6px
+function esc(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.preview{
-  border:1px dashed #bbb;
-  border-radius:8px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#fafafa;
-  min-height:460px
+
+/** #RRGGBB に正規化。無効なら null */
+function normalizeHex(v) {
+  const s = String(v || "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^[0-9a-fA-F]{6}$/.test(s)) return ("#" + s).toLowerCase();
+  return null;
 }
-textarea{
-  width:100%;
-  box-sizing:border-box;
-  height:220px;
-  padding:8px;
-  border:1px solid #bbb;
-  border-radius:8px;
-  font-family:ui-monospace,Consolas,Menlo,monospace;
-  font-size:12px;
-  white-space:pre
+
+/** テキスト入力と type=color を同期し、変更時に buildSVG を呼ぶ */
+function bindColorPair(textId, pickerId) {
+  const t = document.getElementById(textId);
+  const p = document.getElementById(pickerId);
+  if (!t || !p) return;
+
+  // 初期同期（テキスト優先）
+  const n = normalizeHex(t.value) || normalizeHex(p.value) || "#000000";
+  t.value = n;
+  p.value = n;
+
+  // ピッカー → テキスト（リアルタイム）
+  p.addEventListener("input", () => {
+    t.value = p.value;
+    buildSVG();
+  });
+
+  // テキスト → ピッカー（確定時）
+  t.addEventListener("blur", () => {
+    const n2 = normalizeHex(t.value);
+    if (n2) {
+      t.value = n2;
+      p.value = n2;
+      buildSVG();
+    }
+  });
 }
-.hint{font-size:12px;color:#555}
+
+/** select の option をそのフォントで表示し、選択中の select 表示も追従 */
 function applyFontPreviewToSelect(selectId) {
   const sel = document.getElementById(selectId);
   if (!sel) return;
 
-  // option を自分の value のフォントで表示（確実）
+  // option を自分の value のフォントで表示（ブラウザ差はあるが可能な限り）
   [...sel.options].forEach((opt) => {
     opt.style.fontFamily = opt.value;
   });
@@ -54,41 +67,221 @@ function applyFontPreviewToSelect(selectId) {
   update();
 }
 
+function buildSVG() {
+  // ①
+  const t1 = document.getElementById("text1").value || "";
+
+  // 色①：テキスト入力を正規化して使用（ピッカーと同期済み）
+  const c1 = normalizeHex(document.getElementById("color1")?.value) || "#000000";
+
+  const s1 = Math.max(8, Number(document.getElementById("size1").value || 72));
+  const f1 =
+    (document.getElementById("font1free").value || "").trim() ||
+    document.getElementById("font1sel").value;
+  const ls1 = Number(document.getElementById("letter1").value || 0);
+  const bd1 = Math.max(
+    0.05,
+    Number(document.getElementById("baseDur1").value || 0.75)
+  );
+  const spD = Math.max(0.1, Number(document.getElementById("splitDur").value || 1.2));
+
+  // ②
+  const t2 = document.getElementById("text2").value || "";
+
+  // 色②：テキスト入力を正規化して使用（ピッカーと同期済み）
+  const c2 = normalizeHex(document.getElementById("color2")?.value) || "#000000";
+
+  const s2 = Math.max(8, Number(document.getElementById("size2").value || 56));
+  const f2 =
+    (document.getElementById("font2free").value || "").trim() ||
+    document.getElementById("font2sel").value;
+  const ls2 = Number(document.getElementById("letter2").value || 0);
+  const rD = Math.max(0.1, Number(document.getElementById("riseDur").value || 0.9));
+  const aD = Math.max(0, Number(document.getElementById("afterDelay").value || 0.2));
+  const hold2 = Math.max(0, Number(document.getElementById("hold2").value || 1.5));
+  const fade2 = Math.max(0.05, Number(document.getElementById("fade2").value || 0.8));
+
+  // キャンバス
+  const W = 768,
+    H = 432;
+  const baseY1 = Math.round(H / 2) + Math.round(s1 * 0.35);
+  const baseY2 = Math.round(H / 2) + Math.round(s2 * 0.35);
+
+  // ①配置
+  const ch1 = [...t1],
+    w1 = ch1.map((ch) => widthOf(ch, s1, f1));
+  const tot1 = w1.reduce((a, b) => a + b, 0) + Math.max(0, ch1.length - 1) * ls1;
+  let x1 = (W - tot1) / 2;
+
+  // ②配置
+  const ch2 = [...t2],
+    w2 = ch2.map((ch) => widthOf(ch, s2, f2));
+  const tot2 = w2.reduce((a, b) => a + b, 0) + Math.max(0, ch2.length - 1) * ls2;
+  let x2 = (W - tot2) / 2;
+
+  // ①手書きパラメータ
+  const strokeW = Math.max(8, s1 * 0.38);
+  const dashFor = (w) => Math.max(300, w * 12);
+  const durFor = (w) =>
+    (bd1 * Math.max(0.5, Math.min(1.6, w / (s1 * 0.6)))).toFixed(3) + "s";
+
+  // ① 構築
+  let begin = "0s",
+    id = 0;
+  const maskDefs = [],
+    traceTexts = [],
+    fillTextsA = [];
+  ch1.forEach((ch, i) => {
+    const w = w1[i];
+    if (ch === " ") {
+      x1 += w + ls1;
+      return;
+    }
+    const aid = `a${++id}`;
+    const dash = Math.round(dashFor(w));
+    const dur = durFor(w);
+    const mx = Math.round(x1);
+
+    maskDefs.push(
+      `<mask id="m${id}">` +
+        `<text x="${mx}" y="${baseY1}" font-family="${f1}" font-size="${s1}" fill="none" stroke="#fff" stroke-width="${strokeW}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${dash}" stroke-dashoffset="${dash}">` +
+        `${esc(ch)}<animate attributeName="stroke-dashoffset" from="${dash}" to="0" dur="${dur}" begin="${begin}" fill="freeze"/></text>` +
+        `</mask>`
+    );
+
+    traceTexts.push(
+      `<text x="${mx}" y="${baseY1}" font-family="${f1}" font-size="${s1}" fill="none" stroke="${c1}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${dash}" stroke-dashoffset="${dash}">` +
+        `${esc(ch)}<animate id="${aid}" attributeName="stroke-dashoffset" from="${dash}" to="0" dur="${dur}" begin="${begin}" fill="freeze"/></text>`
+    );
+
+    fillTextsA.push(
+      `<text x="${mx}" y="${baseY1}" font-family="${f1}" font-size="${s1}" fill="${c1}" mask="url(#m${id})">${esc(ch)}</text>`
+    );
+
+    begin = `${aid}.end+0.08s`;
+    x1 += w + ls1;
+  });
+
+  const lastId = id ? `a${id}` : null;
+  const overlap = 0.05; // 下レイヤーを短時間だけ残す
+  const gap = 0.01; // display:none 切替後の安全マージン
+  const beginBottom = lastId ? `${lastId}.end+${overlap}s` : "0s";
+  const beginTop = lastId ? `${lastId}.end+${(overlap + gap).toFixed(2)}s` : "0s";
+  const halfY = H / 2;
+
+  // ②（塗り文字）
+  const fillTextsB = [];
+  ch2.forEach((ch, i) => {
+    const w = w2[i];
+    const mx = Math.round(x2);
+    fillTextsB.push(
+      `<text x="${mx}" y="${baseY2}" font-family="${f2}" font-size="${s2}" fill="${c2}">${esc(ch)}</text>`
+    );
+    x2 += w + ls2;
+  });
+
+  // SVG
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+  <defs>
+    ${maskDefs.join("\n    ")}
+    <mask id="maskTop"><rect x="0" y="0" width="${W}" height="${halfY}" fill="#fff"/></mask>
+    <mask id="maskBottom"><rect x="0" y="${halfY}" width="${W}" height="${halfY}" fill="#fff"/></mask>
+
+    <symbol id="glyphsA" viewBox="0 0 ${W} ${H}">
+      ${fillTextsA.join("\n      ")}
+    </symbol>
+    <symbol id="glyphsB" viewBox="0 0 ${W} ${H}">
+      ${fillTextsB.join("\n      ")}
+    </symbol>
+  </defs>
+
+  <!-- ① 手書き線：描画直後に透明化（残像防止） -->
+  <g id="traceA">
+    ${traceTexts.join("\n    ")}
+    ${
+      lastId
+        ? `<animate attributeName="opacity" from="1" to="0" dur="0.1s" begin="${lastId}.end+0.01s" fill="freeze"/>`
+        : ""
+    }
+  </g>
+
+  <!-- ① 下レイヤー：短時間の重ね → 完全除外 -->
+  <use id="layerBottomA" href="#glyphsA" xlink:href="#glyphsA">
+    ${lastId ? `<set attributeName="display" to="none" begin="${beginBottom}" />` : ""}
+  </use>
+
+  <!-- ① 上レイヤー（上下分割→左右移動＋フェード） -->
+  <use id="layerTopA_Up" href="#glyphsA" xlink:href="#glyphsA" mask="url(#maskTop)">
+    ${
+      lastId
+        ? `<animateTransform id="splitMove" attributeName="transform" type="translate" from="0 0" to="200 0" dur="${spD}s" begin="${beginTop}" fill="freeze"/>`
+        : ""
+    }
+    ${
+      lastId
+        ? `<animate attributeName="opacity" from="1" to="0" dur="${spD}s" begin="${beginTop}" fill="freeze"/>`
+        : ""
+    }
+  </use>
+  <use id="layerTopA_Down" href="#glyphsA" xlink:href="#glyphsA" mask="url(#maskBottom)">
+    ${
+      lastId
+        ? `<animateTransform attributeName="transform" type="translate" from="0 0" to="-200 0" dur="${spD}s" begin="${beginTop}" fill="freeze"/>`
+        : ""
+    }
+    ${
+      lastId
+        ? `<animate attributeName="opacity" from="1" to="0" dur="${spD}s" begin="${beginTop}" fill="freeze"/>`
+        : ""
+    }
+  </use>
+
+  <!-- ② 浮かび上がる → 指定秒後に透明化 -->
+  <use id="textB" href="#glyphsB" xlink:href="#glyphsB" opacity="0">
+    <!-- フェードイン（基準：splitMove の終了 + afterDelay）-->
+    <animate id="appearB" attributeName="opacity" from="0" to="1" dur="${rD}s" begin="splitMove.end+${aD}s" fill="freeze"/>
+    <animateTransform attributeName="transform" type="translate" from="0 12" to="0 0" dur="${rD}s" begin="splitMove.end+${aD}s" fill="freeze"/>
+    <!-- 指定保持時間（hold2）後にフェードアウト開始 -->
+    <animate attributeName="opacity" from="1" to="0" dur="${fade2}s" begin="appearB.end+${hold2}s" fill="freeze"/>
+  </use>
+</svg>`;
+
+  document.getElementById("code").value = svg;
+  document.getElementById("previewArea").innerHTML = svg;
+}
+
+document.getElementById("build").addEventListener("click", (e) => {
+  e.preventDefault();
+  buildSVG();
+});
+document.getElementById("copy").addEventListener("click", (e) => {
+  e.preventDefault();
+  const t = document.getElementById("code");
+  t.select();
+  t.setSelectionRange(0, 999999);
+  document.execCommand("copy");
+});
+document.getElementById("download").addEventListener("click", (e) => {
+  e.preventDefault();
+  const svg = document.getElementById("code").value || "";
+  const blob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "handwrite_two_stage_autohide.svg";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+});
+
+// 初期化：フォント候補を見た目で分かるように
 applyFontPreviewToSelect("font1sel");
 applyFontPreviewToSelect("font2sel");
-function normalizeHex(v) {
-  const s = String(v || "").trim();
-  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
-  if (/^[0-9a-fA-F]{6}$/.test(s)) return ("#" + s).toLowerCase();
-  return null;
-}
 
-function bindColorPair(textId, pickerId) {
-  const t = document.getElementById(textId);
-  const p = document.getElementById(pickerId);
-  if (!t || !p) return;
-
-  // 初期同期（テキスト優先）
-  const n = normalizeHex(t.value) || normalizeHex(p.value) || "#000000";
-  t.value = n;
-  p.value = n;
-
-  // ピッカー → テキスト
-  p.addEventListener("input", () => {
-    t.value = p.value;
-    buildSVG();
-  });
-
-  // テキスト → ピッカー（入力中は邪魔しない：blur で確定）
-  t.addEventListener("blur", () => {
-    const n2 = normalizeHex(t.value);
-    if (n2) {
-      t.value = n2;
-      p.value = n2;
-      buildSVG();
-    }
-  });
-}
-
+// 初期化：色ピッカー（円スウォッチ）＋カラーコード同期（HTML側に color1picker / color2picker が必要）
 bindColorPair("color1", "color1picker");
 bindColorPair("color2", "color2picker");
+
+// 初期生成
+buildSVG();
