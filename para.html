@@ -10,6 +10,8 @@
 <body>
 
 <h1>①手書き → 上下分割消滅 → ②浮上 → 指定秒後に透明化（SVG/SMIL）</h1>
+
+<!-- リアルタイム文字プレビュー -->
 <div class="livePreview">
   <div class="pvRow">
     <div class="pvLabel">①</div>
@@ -23,20 +25,23 @@
 
 <fieldset>
   <legend>① 手書きテキスト（分割消滅する文字）</legend>
+
   <div class="row">
     <div>
       <label>テキスト①</label>
       <input id="text1" type="text" value="Call of Cthulhu">
     </div>
-<div class="colorRow">
-  <button type="button" class="colorBtn" id="color1btn" aria-label="色①を選択"></button>
-  <input id="color1" type="text" value="#000000" placeholder="#RRGGBB">
-  <button type="button" class="eyeBtn" id="color1eye">スポイト</button>
-</div>
 
-
+    <div>
+      <label>色①</label>
+      <div class="colorRow">
+        <button type="button" class="colorBtn" id="color1btn" aria-label="色①を選択"></button>
+        <input id="color1" type="text" value="#000000" placeholder="#RRGGBB">
+        <button type="button" class="eyeBtn" id="color1eye">スポイト</button>
+      </div>
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>サイズ①（px）</label>
@@ -63,6 +68,7 @@
       <div class="hint">下の任意フォントが空ならこの選択を使用します。</div>
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>任意フォント①（空なら上を使用）</label>
@@ -73,6 +79,7 @@
       <input id="letter1" type="number" value="2" step="0.5">
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>1文字の基準描画秒①（baseDur, s）</label>
@@ -88,24 +95,23 @@
 
 <fieldset>
   <legend>② 浮かび上がるテキスト（①の後に出現 → 指定秒後に透明化）</legend>
+
   <div class="row">
     <div>
       <label>テキスト②</label>
       <input id="text2" type="text" value="Welcome to the Mythos">
     </div>
-<div id="colorPanel" class="colorPanel" hidden>
-  <div class="colorPanelInner">
-    <div class="colorPanelHeader">
-      <div id="colorPanelTitle">色選択</div>
-      <button type="button" id="colorPanelClose">×</button>
-    </div>
-    <div id="iroMount"></div>
-  </div>
-</div>
 
-
+    <div>
+      <label>色②</label>
+      <div class="colorRow">
+        <button type="button" class="colorBtn" id="color2btn" aria-label="色②を選択"></button>
+        <input id="color2" type="text" value="#000000" placeholder="#RRGGBB">
+        <button type="button" class="eyeBtn" id="color2eye">スポイト</button>
+      </div>
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>サイズ②（px）</label>
@@ -131,6 +137,7 @@
       </select>
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>任意フォント②（空なら上を使用）</label>
@@ -141,6 +148,7 @@
       <input id="letter2" type="number" value="1" step="0.5">
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>②のフェードイン秒数（s）</label>
@@ -151,6 +159,7 @@
       <input id="afterDelay" type="number" value="0.2" step="0.05" min="0">
     </div>
   </div>
+
   <div class="row">
     <div>
       <label>②の表示維持秒数（透明化までの待ち秒）</label>
@@ -178,6 +187,17 @@
   <legend>生成SVGコード</legend>
   <textarea id="code" readonly></textarea>
 </fieldset>
+
+<!-- 共有カラーパネル（①②どちらからでも開く） -->
+<div id="colorPanel" class="colorPanel" hidden>
+  <div class="colorPanelInner">
+    <div class="colorPanelHeader">
+      <div id="colorPanelTitle">色選択</div>
+      <button type="button" id="colorPanelClose">×</button>
+    </div>
+    <div id="iroMount"></div>
+  </div>
+</div>
 
 <script src="para.js" defer></script>
 </body>
