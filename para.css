@@ -60,4 +60,41 @@ textarea{
   border:none;
   border-radius:999px; /* swatch を円に */
 }
+.colorBtn{
+  width:34px; height:34px;
+  border:1px solid #bbb;
+  border-radius:999px;
+  background:#000;
+  padding:0;
+}
+.eyeBtn{
+  padding:6px 10px;
+  border:1px solid #bbb;
+  border-radius:8px;
+  background:#fff;
+}
+
+.colorPanel{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.35);
+  display:flex; align-items:center; justify-content:center;
+  z-index:9999;
+}
+.colorPanelInner{
+  width:min(360px, 92vw);
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+}
+.colorPanelHeader{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:8px;
+}
+#colorPanelClose{
+  width:32px; height:32px;
+  border:1px solid #bbb;
+  border-radius:8px;
+  background:#fff;
+}
 
