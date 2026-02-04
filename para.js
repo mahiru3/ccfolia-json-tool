@@ -272,29 +272,30 @@ function openColorPanel(title, textId, btnId){
 
   if (!panel || !titleEl || !textEl) return;
 
+  // 1. まず現在の色を確定させる
+  const current = normalizeHex(textEl.value) || "#000000";
+  
   activeColorTextId = textId;
   activeColorBtnId  = btnId;
 
   titleEl.textContent = title;
-
-  const current = normalizeHex(textEl.value) || "#000000";
   textEl.value = current;
   setBtnColor(btnId, current);
 
-  // 先に必ず表示（閉じるは常に効く）
+  // パネルを表示
   panel.hidden = false;
 
-  // iroが無ければ説明を出すだけ（フリーズさせない）
+  // iro.js のチェック
   if (!window.iro){
-    if (hintEl) hintEl.textContent = "iro.min.js が読み込めていません（同階層配置と読み込み順を確認してください）。";
+    if (hintEl) hintEl.textContent = "iro.min.js が読み込めていません（同階層配置を確認してください）。";
     return;
   } else {
     if (hintEl) hintEl.textContent = "";
   }
 
-  // 初回だけ生成
+  // 2. 初回だけ生成
   if (!colorPicker){
-    try{
+    try {
       colorPicker = new iro.ColorPicker("#iroMount", {
         width: 260,
         layout: [
@@ -313,23 +314,23 @@ function openColorPanel(title, textId, btnId){
         buildSVG();
       });
     } catch(e){
-      if (hintEl) hintEl.textContent = "カラーピッカー初期化に失敗しました。console を確認してください。";
+      if (hintEl) hintEl.textContent = "カラーピッカー初期化に失敗しました。";
       console.error(e);
       return;
     }
   }
 
-  // 開くたびに現在色へ同期
-  try{
+  // 3. 開くたびに現在色へ同期
+  try {
     colorPicker.color.hexString = current;
-  }catch(e){
+  } catch(e) {
     console.error(e);
   }
 }
 
 async function pickWithEyedropper(textId, btnId){
   if (!("EyeDropper" in window)) return;
-  try{
+  try {
     const eye = new EyeDropper();
     const res = await eye.open();
     const hex = normalizeHex(res.sRGBHex) || "#000000";
@@ -338,7 +339,7 @@ async function pickWithEyedropper(textId, btnId){
     setBtnColor(btnId, hex);
     updateTextPreviews();
     buildSVG();
-  }catch(_){}
+  } catch(_) {}
 }
 
 /* ---------------------------
@@ -382,7 +383,7 @@ function init(){
     });
   });
 
-  // 入力が変わったらプレビューだけ即更新（SVGも追従したいのでbuildも呼ぶ）
+  // 入力が変わったらプレビュー更新
   [
     "text1","size1","font1sel","font1free","letter1","baseDur1","splitDur",
     "text2","size2","font2sel","font2free","letter2","riseDur","afterDelay","hold2","fade2"
@@ -392,7 +393,7 @@ function init(){
     el?.addEventListener("change",()=>{ updateTextPreviews(); buildSVG(); });
   });
 
-  // ボタン
+  // 各種ボタン
   document.getElementById("build")?.addEventListener("click",(e)=>{ e.preventDefault(); buildSVG(); });
   document.getElementById("copy")?.addEventListener("click",(e)=>{ e.preventDefault(); copySVG(); });
   document.getElementById("download")?.addEventListener("click",(e)=>{ e.preventDefault(); downloadSVG(); });
