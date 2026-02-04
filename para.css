@@ -1,120 +1,71 @@
 body{
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,"Noto Sans JP",sans-serif;
-  margin:24px;
-  line-height:1.6
+  font-family:system-ui,sans-serif;
+  margin:20px;
 }
-h1{font-size:18px;margin:0 0 12px}
-fieldset{border:1px solid #ccc;border-radius:8px;padding:12px;margin:0 0 16px}
-label{display:block;font-size:13px;margin:6px 0 2px}
-input,select,button,textarea{font:inherit}
-input[type="text"],input[type="number"],select{
-  width:100%;
-  box-sizing:border-box;
-  padding:6px;
-  border:1px solid #bbb;
-  border-radius:6px
+
+.row{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
 }
-.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
-.preview{
-  border:1px dashed #bbb;
-  border-radius:8px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#fafafa;
-  min-height:460px
-}
-textarea{
-  width:100%;
-  box-sizing:border-box;
-  height:220px;
-  padding:8px;
-  border:1px solid #bbb;
-  border-radius:8px;
-  font-family:ui-monospace,Consolas,Menlo,monospace;
-  font-size:12px;
-  white-space:pre
-}
-.hint{font-size:12px;color:#555}
-/* ①フォント候補：option をそのフォントで見せる（ブラウザ差あり） */
-#font1sel option { font-family: var(--opt-font, inherit); }
-#font2sel option { font-family: var(--opt-font, inherit); }
+
 .colorRow{
   display:flex;
-  gap:8px;
+  gap:6px;
   align-items:center;
 }
-.colorRow input[type="color"]{
-  width:42px;
-  height:34px;
-  padding:0;
-  border:1px solid #bbb;
-  border-radius:999px; /* ボタン自体は円にできる */
-  background:#fff;
-}
-.colorRow input[type="color"]::-webkit-color-swatch-wrapper{
-  padding:0;
-}
-.colorRow input[type="color"]::-webkit-color-swatch{
-  border:none;
-  border-radius:999px; /* swatch を円に */
-}
+
 .colorBtn{
-  width:34px; height:34px;
-  border:1px solid #bbb;
-  border-radius:999px;
-  background:#000;
-  padding:0;
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:1px solid #666;
 }
+
 .eyeBtn{
-  padding:6px 10px;
-  border:1px solid #bbb;
-  border-radius:8px;
-  background:#fff;
+  font-size:12px;
+}
+
+.livePreview{
+  border:1px solid #ccc;
+  padding:10px;
+  margin-bottom:12px;
+}
+
+.pvRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.pvLabel{
+  width:20px;
+}
+
+.preview{
+  margin-top:12px;
+  min-height:200px;
+  border:1px dashed #aaa;
 }
 
 .colorPanel{
-  position:fixed; inset:0;
-  background:rgba(0,0,0,.35);
-  display:flex; align-items:center; justify-content:center;
-  z-index:9999;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.3);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
 }
+
 .colorPanelInner{
-  width:min(360px, 92vw);
   background:#fff;
-  border-radius:12px;
   padding:12px;
-  box-shadow:0 10px 30px rgba(0,0,0,.25);
-}
-.colorPanelHeader{
-  display:flex; align-items:center; justify-content:space-between;
-  margin-bottom:8px;
-}
-#colorPanelClose{
-  width:32px; height:32px;
-  border:1px solid #bbb;
   border-radius:8px;
-  background:#fff;
 }
 
-/* 画面を「設定(左) + プレビュー(右)」にしやすくする */
-body{ max-width: 1100px; }
-
-.livePreview{
-  border:1px solid #ddd;
-  border-radius:10px;
-  padding:10px 12px;
-  margin:0 0 16px;
-  background:#fff;
+.colorPanelHeader{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:6px;
 }
-.pvRow{ display:flex; gap:10px; align-items:baseline; }
-.pvLabel{ width:22px; font-size:12px; color:#666; }
-.pvText{ flex:1; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-
-/* 入力を“狭く”見せる（余白と高さを減らす） */
-input[type="text"], input[type="number"], select{
-  padding:4px 6px;
-}
-label{ margin:4px 0 2px; }
-fieldset{ padding:10px; }
