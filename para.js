@@ -393,3 +393,51 @@ document.getElementById("color2eye")?.addEventListener("click", () => pickWithEy
 // 初期ボタン色
 setBtnColor("color1btn", normalizeHex(document.getElementById("color1")?.value) || "#000000");
 setBtnColor("color2btn", normalizeHex(document.getElementById("color2")?.value) || "#000000");
+function updateTextPreviews() {
+  // ①
+  const t1 = document.getElementById("text1")?.value || "";
+  const c1 = normalizeHex(document.getElementById("color1")?.value) || "#000000";
+  const s1 = Math.max(8, Number(document.getElementById("size1")?.value || 72));
+  const f1 = (document.getElementById("font1free")?.value || "").trim()
+    || document.getElementById("font1sel")?.value || "serif";
+  const ls1 = Number(document.getElementById("letter1")?.value || 0);
+
+  const pv1 = document.getElementById("pv1");
+  if (pv1) {
+    pv1.textContent = t1 || " ";
+    pv1.style.color = c1;
+    pv1.style.fontFamily = f1;
+    pv1.style.fontSize = Math.min(64, s1) + "px"; // プレビューは上限を設ける（見切れ防止）
+    pv1.style.letterSpacing = ls1 + "px";
+  }
+
+  // ②
+  const t2 = document.getElementById("text2")?.value || "";
+  const c2 = normalizeHex(document.getElementById("color2")?.value) || "#000000";
+  const s2 = Math.max(8, Number(document.getElementById("size2")?.value || 56));
+  const f2 = (document.getElementById("font2free")?.value || "").trim()
+    || document.getElementById("font2sel")?.value || "serif";
+  const ls2 = Number(document.getElementById("letter2")?.value || 0);
+
+  const pv2 = document.getElementById("pv2");
+  if (pv2) {
+    pv2.textContent = t2 || " ";
+    pv2.style.color = c2;
+    pv2.style.fontFamily = f2;
+    pv2.style.fontSize = Math.min(56, s2) + "px";
+    pv2.style.letterSpacing = ls2 + "px";
+  }
+}
+
+// ①②の入力が変わったら即更新
+[
+  "text1","size1","font1sel","font1free","letter1","color1",
+  "text2","size2","font2sel","font2free","letter2","color2"
+].forEach((id) => {
+  document.getElementById(id)?.addEventListener("input", () => {
+    updateTextPreviews();
+  });
+  document.getElementById(id)?.addEventListener("change", () => {
+    updateTextPreviews();
+  });
+});
