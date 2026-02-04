@@ -56,3 +56,39 @@ function applyFontPreviewToSelect(selectId) {
 
 applyFontPreviewToSelect("font1sel");
 applyFontPreviewToSelect("font2sel");
+function normalizeHex(v) {
+  const s = String(v || "").trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
+  if (/^[0-9a-fA-F]{6}$/.test(s)) return ("#" + s).toLowerCase();
+  return null;
+}
+
+function bindColorPair(textId, pickerId) {
+  const t = document.getElementById(textId);
+  const p = document.getElementById(pickerId);
+  if (!t || !p) return;
+
+  // 初期同期（テキスト優先）
+  const n = normalizeHex(t.value) || normalizeHex(p.value) || "#000000";
+  t.value = n;
+  p.value = n;
+
+  // ピッカー → テキスト
+  p.addEventListener("input", () => {
+    t.value = p.value;
+    buildSVG();
+  });
+
+  // テキスト → ピッカー（入力中は邪魔しない：blur で確定）
+  t.addEventListener("blur", () => {
+    const n2 = normalizeHex(t.value);
+    if (n2) {
+      t.value = n2;
+      p.value = n2;
+      buildSVG();
+    }
+  });
+}
+
+bindColorPair("color1", "color1picker");
+bindColorPair("color2", "color2picker");
