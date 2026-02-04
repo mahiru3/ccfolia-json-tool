@@ -40,3 +40,24 @@ textarea{
 /* ①フォント候補：option をそのフォントで見せる（ブラウザ差あり） */
 #font1sel option { font-family: var(--opt-font, inherit); }
 #font2sel option { font-family: var(--opt-font, inherit); }
+.colorRow{
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+.colorRow input[type="color"]{
+  width:42px;
+  height:34px;
+  padding:0;
+  border:1px solid #bbb;
+  border-radius:999px; /* ボタン自体は円にできる */
+  background:#fff;
+}
+.colorRow input[type="color"]::-webkit-color-swatch-wrapper{
+  padding:0;
+}
+.colorRow input[type="color"]::-webkit-color-swatch{
+  border:none;
+  border-radius:999px; /* swatch を円に */
+}
+
